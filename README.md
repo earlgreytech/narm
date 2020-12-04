@@ -17,11 +17,11 @@ Instruction List
 * BIC
 * BKPT -- equivalent to NOP
 * BL
-* BLX
+* BLX (only BLX register form)
 * BX
 * CMN
 * CMP
-* CPS -- not supported
+* CPS -- not supported?
 * CPY
 * DMB -- not supported?
 * DSB -- not supported?
@@ -68,6 +68,18 @@ Instruction List
 * YIELD -- nop
 * 
 
+Note: Cortex-M0 unsupported instructions:
+* CBZ
+* CBNZ
+* IT
+
+Note: Cortex-M0 supported 32bit instructions:
+* BL
+* DMB
+* DSB
+* ISB
+* MRS
+* MSR
 
 
 
@@ -216,7 +228,7 @@ PC loading instructions:
 * BX
 * (future) MOV reg T1
 * POP
-* 
+
 
 
 R13 is limited. Bottom 2 bits are always read as zero and when written to are ignored
@@ -361,3 +373,44 @@ Opcodes organized by encoding:
     1011_1111_0011_0000 WFI T1 nop
     1011_1111_0001_0000 YIELD T1 nop
 
+
+qx86 style of opcode handling:
+
+Defining opcode:
+
+0110_0xxx_xxyy_yzzz STR imm T1
+define_opcode(0110_0000_0000_0000b).with_encoding(IMM5_RM3_RD3).calls(str_imm5_rm3_rd3).into_table(&mut opcodes);
+
+Opcode definition:
+
+fn str_imm5_rm3_rd3(vm: &mut VM, pipeline: &Pipeline, _hv: &mut dyn Hypervisor) -> Result<(), VMError>{
+    let address = get_sreg(pipeline.arg1) + zero_extend32(pipeline.arg0 << 2);
+    vm.write_memory32(address, get_sreg(pipeline.arg2))?;
+}
+
+Decoding example:
+
+foreach mask in encoding_masks{
+    let masked_opcode = opcode & mask;
+    opcode = opcode_table[masked_opcode];
+}
+
+
+alternative simplified approach, without pipelining:
+
+foreach mask in encoding_masks{
+    let masked_opcode = opcode & mask;
+    let arguments = decode_imm5_r3_r3(opcode);
+    match masked_opcode{
+        case STR_IMM_T1{
+            str_imm5_r3_r3(...)?; //for simple operations, can be done inline
+        }
+    }
+    opcode = opcode_table[masked_opcode];
+}
+
+
+    imm32 = ZeroExtend(imm5:'00', 32);
+    offset_addr = (R[n] + imm32);
+    address = offset_addr;
+    MemU[address,4] = R[t];
