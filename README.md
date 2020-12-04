@@ -109,8 +109,10 @@ Thumb instruction set only
 
 Expected Memory map is similar to qx86:
 
-* 0x1_0000 - 0x10_0000 -- code memories
-* 0x8001_0000 - 0x8010_0000 -- unpreserved writeable data memories
+* 0x1_0000 - 0x10_0000 -- code memories (1Mb total)
+* 0x8001_0000 - 0x8010_0000 -- unpreserved writeable data memories (1Mb total)
+* 0x8100_0000 - 0x8101_0000 -- RAM scratch space (64kb)
+* 0x8200_0000 - 0x8200_8000 -- Stack space (32kb)
 
 Instruction patterns:
 

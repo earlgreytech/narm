@@ -1,3 +1,5 @@
+use crate::memory::*;
+use crate::NarmError;
 
 
 #[derive(Default)]
@@ -11,6 +13,22 @@ pub struct NarmVM{
     //TBD
     pub gas_remaining: u64,
     //pub charger: GasCharger
-    //pub memory: MemorySystem
+    pub memory: MemorySystem
 }
+
+impl NarmVM{
+    //returns either a service call number (from SVC instruction) or an error
+    //Note there is no equivalent to x86 "hlt" in ARM
+    pub fn execute() -> Result<u32, NarmError>{
+        Ok(0)
+    }
+    pub fn cycle() -> Result<u32, NarmError>{
+        Ok(0)
+    }
+}
+
+
+
+
+
 
