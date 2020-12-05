@@ -7,6 +7,7 @@ extern crate strum_macros;
 mod bitmanip;
 pub mod memory;
 pub mod narmvm;
+mod opcodes;
 
 #[derive(PartialEq, Debug, Display, Copy, Clone)]
 pub enum  NarmError{
