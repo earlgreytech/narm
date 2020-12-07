@@ -325,7 +325,7 @@ Opcodes organized by encoding:
     0010_1xxx_yyyy_yyyy CMP imm T1
     1001_1xxx_yyyy_yyyy LDR imm T2
     0100_1xxx_yyyy_yyyy LDR lit T1
-    0010_0xxx_yyyy_yyyy MOV imm T1 flags
+    0010_0xxx_yyyy_yyyy MOV imm T1 noflags
     1001_0xxx_yyyy_yyyy STR imm T2
     0011_1xxx_yyyy_yyyy SUBS imm T2 flags
     rn,reglist: (compatible encoding, but imm8 is treated as reglist)

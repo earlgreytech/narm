@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 strum = "0.20.0"
 strum_macros = "0.20.0"
+
+[dev-dependencies]
+elf = "0.0.10"

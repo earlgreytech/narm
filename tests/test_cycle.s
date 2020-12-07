@@ -1,9 +1,9 @@
 .syntax unified
-.org 0x10000
-.section text
+.section .text
+.thumb_func
 _start:
     .globl _start
-    mov r0, #100
+    movs r0, #0xF1
 1: 
     b 1b @ Halt
 
