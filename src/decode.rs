@@ -12,6 +12,13 @@ pub const MASK_R4_Q3:u16        = 0b0000_0000_0111_1111;
 pub const MASK_X1_RL8:u16       = 0b0000_0001_1111_1111;
 pub const MASK_NONE:u16         = 0b0000_0000_0000_0000;
 
+/// This specifies a register beyond r0-r7
+/// It is not strictly necessary to be organized like this, but used to prevent programmer errors
+pub struct LongRegister{
+    pub register: u32
+}
+
+
 pub fn is_32bit_opcode(opcode: u16) -> bool{
     if (opcode & 0b1110_0000_0000_0000) != 0b1110_0000_0000_0000 {
         return false;
@@ -19,28 +26,15 @@ pub fn is_32bit_opcode(opcode: u16) -> bool{
     opcode & 0b0001_1000_0000_0000 != 0
 }
 
-#[derive(Default)]
-pub struct Arguments{
-    pub arg0: u32,
-    pub arg1: u32,
-    pub arg2: u32
+
+pub fn decode_r3_r3(opcode: u16) -> (usize, usize){
+    ((opcode & 0b0000_0000_0011_1000 >> 3) as usize,
+        (opcode & 0b0000_0000_0000_0111) as usize)
 }
 
-pub fn decode_r3_r3(opcode: u16) -> Arguments{
-    let a0 = opcode & 0b0000_0000_0011_1000 >> 3;
-    let a1 = opcode & 0b0000_0000_0000_0111;
-    Arguments{
-        arg0: a0 as u32,
-        arg1: a1 as u32,
-        arg2: 0
-    }
-}
-
-pub fn decode_r3_imm8(opcode: u16) -> Arguments{
-    let mut a = Arguments::default();
-    a.arg0 = (opcode & 0b0000_0111_0000_0000 >> 8) as u32;
-    a.arg1 = (opcode & 0b0000_0000_1111_1111) as u32;
-    a
+pub fn decode_r3_imm8(opcode: u16) -> (usize, u8){
+    ((opcode & 0b0000_0111_0000_0000 >> 8) as usize,
+        (opcode & 0b0000_0000_1111_1111) as u8)
 }
 
 

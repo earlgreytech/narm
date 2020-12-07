@@ -9,6 +9,16 @@ pub trait BitManipulation{
     fn get_bit_big_endian(&self, index: u8) -> bool;
 }
 
+pub trait IntAlign{
+    fn align4(&self) -> u32;
+}
+
+impl IntAlign for u32{
+    fn align4(&self) -> u32{
+        self & 0b1111_1111_1111_1100
+    }
+}
+
 impl BitManipulation for u32{
     fn get_bit(&self, index: u8) -> bool{
         self & (1 << index) > 0
