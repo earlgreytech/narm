@@ -60,15 +60,6 @@ impl NarmVM{
         {
             /*
                 rd3,imm8
-                0011_0xxx_yyyy_yyyy ADDS imm T2 flags
-                1010_1xxx_yyyy_yyyy ADD sp+imm T1 noflags
-                1010_0xxx_yyyy_yyyy ADR T1
-                0010_1xxx_yyyy_yyyy CMP imm T1
-                1001_1xxx_yyyy_yyyy LDR imm T2
-                0100_1xxx_yyyy_yyyy LDR lit T1
-                0010_0xxx_yyyy_yyyy MOV imm T1 noflags
-                1001_0xxx_yyyy_yyyy STR imm T2
-                0011_1xxx_yyyy_yyyy SUBS imm T2 flags
                 rn,reglist: (compatible encoding, but imm8 is treated as reglist)
                 1100_1xxx_yyyy_yyyy LDM T1
                 1100_0xxx_yyyy_yyyy STM T1
@@ -89,9 +80,15 @@ impl NarmVM{
                     self.sreg[reg] = self.memory.get_u32(address)?;
                     return Ok(0);
                 },
+                //1001_1xxx_yyyy_yyyy LDR imm T2
+                0b1001_1000_0000_0000 => {
+                    let address = self.get_sp() + ((imm as u32) << 2);
+                    self.sreg[reg] = self.memory.get_u32(address)?;
+                    return Ok(0);
+                },
                 //0010_0xxx_yyyy_yyyy MOV imm T1 flags
+                //0010_0000_1111_0001
                 0b0010_0000_0000_0000 => {
-                    println!("opcode: {}, reg: {}, imm: {}", opcode, reg, imm);
                     let imm = imm as u32;
                     self.sreg[reg] = imm;
                     //update flags
@@ -99,12 +96,63 @@ impl NarmVM{
                     self.cpsr.n = imm.get_bit(31);
                     //C and V flags unchanged
                     return Ok(0);
-                }
+                },
+                //0011_0xxx_yyyy_yyyy ADDS imm T2 flags
+                0b0011_0000_0000_0000 => {
+                    self.sreg[reg] = self.op_add(self.sreg[reg], imm as u32, false, true);
+                    return Ok(0);
+                },
+                //1010_1xxx_yyyy_yyyy ADD sp+imm T1 noflags
+                0b1010_1000_0000_0000 => {
+                    self.sreg[reg] = self.op_add(self.get_sp(), (imm as u32) << 2, false, false);
+                    return Ok(0);
+                },
+                //1010_0xxx_yyyy_yyyy ADR T1
+                0b1010_0000_0000_0000 => {
+                    self.sreg[reg] = self.last_pc.align4() + ((imm as u32) << 2);
+                    return Ok(0);
+                },
+                //0010_1xxx_yyyy_yyyy CMP imm T1
+                0b0010_1000_0000_0000 => {
+                    self.op_add(self.sreg[reg], !(imm as u32), true, true); //result is unused
+                    return Ok(0);
+                },
+                //1001_0xxx_yyyy_yyyy STR imm T2
+                0b1001_0000_0000_0000 => {
+                    let address = self.get_sp() + ((imm as u32) << 2);
+                    self.memory.set_u32(address, self.sreg[reg])?;
+                    return Ok(0);
+                },
+                //0011_1xxx_yyyy_yyyy SUBS imm T2 flags
+                0b0011_1000_0000_0000 => {
+                    self.sreg[reg] = self.op_add(self.sreg[reg], !(imm as u32), true, true);
+                    return Ok(0);
+                },
+
+
                 _ => {}
             }
         }
         Err(NarmError::InvalidOpcode(opcode))
     }
+
+    fn op_add(&mut self, operand1: u32, operand2: u32, carry_in: bool, set_flags: bool) -> u32{
+        let prelim_sum = if carry_in{
+            operand1.wrapping_add(1)
+        }else{
+            operand1
+        };
+        let (result, carry) = prelim_sum.overflowing_add(operand2);
+        if set_flags{
+            let (_, overflow) = (prelim_sum as i32).overflowing_add(operand2 as i32);
+            self.cpsr.v = overflow;
+            self.cpsr.c = carry;
+            self.cpsr.n = result.get_bit(31);
+            self.cpsr.z = result == 0;
+        }
+        result
+    }
+
     /// This reads the current value of PC according to ARM specification for internal operations
     /// Specifically, pc will be pointing at the current instruction address, plus 4 added, and with the bottom two bits set to 0
     pub fn get_last_pc(&self) -> u32{
@@ -112,6 +160,9 @@ impl NarmVM{
     }
     pub fn set_pc(&mut self, value: u32){
         self.pc = value;
+    }
+    pub fn get_sp(&self) -> u32{
+        self.long_registers[13 - 8]
     }
     pub fn set_reg(&mut self, reg: LongRegister, value: u32){
         let mut final_value = value;
