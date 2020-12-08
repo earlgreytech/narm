@@ -57,15 +57,9 @@ impl NarmVM{
         self.last_pc = self.pc;
         let opcode = self.memory.get_u16(self.pc)?;
         self.pc += 2;
+        //opcodes for r3_imm8, r3_reglist, and imm11
         {
-            /*
-                rd3,imm8
-                rn,reglist: (compatible encoding, but imm8 is treated as reglist)
-                1100_1xxx_yyyy_yyyy LDM T1
-                1100_0xxx_yyyy_yyyy STM T1
-                imm10: (compatible encoding, but rd3 is top bits of an imm10)
-                1110_00xx_xxxx_xxxx B T2
-            */
+            
             let op = opcode & !MASK_R3_IMM8;
             let (reg, imm) = decode_r3_imm8(opcode);
             match op{
@@ -128,8 +122,48 @@ impl NarmVM{
                     self.sreg[reg] = self.op_add(self.sreg[reg], !(imm as u32), true, true);
                     return Ok(0);
                 },
-
-
+                //1100_1xxx_yyyy_yyyy LDM T1
+                0b1100_1000_0000_0000 => {
+                    let reglist = imm; //imm is actually a reg list here
+                    let mut address = self.sreg[reg];
+                    let wback = !reglist.get_bit(reg as u8);
+                    let mut count = 0;
+                    for i in 0..7{
+                        if reglist.get_bit(i){
+                            self.sreg[i as usize] = self.memory.get_u32(address)?;
+                            address += 4;
+                            count += 1;
+                        }
+                    }
+                    if wback && !reglist.get_bit(reg as u8) {
+                        self.sreg[reg] += 4 * count;
+                    }
+                    return Ok(0);
+                },
+                //1100_0xxx_yyyy_yyyy STM T1
+                0b1100_0000_0000_0000 => {
+                    let reglist = imm; //imm is actually a reg list here
+                    let mut address = self.sreg[reg];
+                    let mut count = 0;
+                    for i in 0..7{
+                        if reglist.get_bit(i){
+                            //NOTE this does not include the "unknown" unpredictable case:
+                            //If the base register is included and not the lowest-numbered register in the list, such an instruction stores an unknown value for the base register. 
+                            //Use of <Rn> in the register list is deprecated.
+                            self.memory.set_u32(address, self.sreg[i as usize])?;
+                            address += 4;
+                            count += 1;
+                        }
+                    }
+                    self.sreg[reg] += 4 * count;
+                    return Ok(0);
+                },
+                //1110_0xxx_xxxx_xxxx B T2
+                0b1110_0000_0000_0000 => {
+                    let label = sign_extend32((((reg as u32) << 8) | (imm as u32)) << 1, 12);
+                    self.pc = (self.last_pc as i32 + label) as u32;
+                    return Ok(0);
+                }
                 _ => {}
             }
         }

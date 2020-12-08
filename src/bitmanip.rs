@@ -82,6 +82,21 @@ impl BitManipulation for u8{
     }
 }
 
+// Source: https://github.com/archshift/bitutils-rs MIT licensed
+/// Sign extend a `size`-bit number (stored in a u32) to an i32.
+/// 
+/// let i5bit = 0b11110;
+/// let i32bit = narm::bitmanip::sign_extend32(i5bit, 5);
+/// assert_eq!(i32bit, -2);
+/// 
+#[inline]
+pub fn sign_extend32(data: u32, size: u32) -> i32 {
+    assert!(size > 0 && size <= 32);
+    ((data << (32 - size)) as i32) >> (32 - size)
+}
+
+
+
 #[cfg(test)]
 mod tests{
     use super::*;
