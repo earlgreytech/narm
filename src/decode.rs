@@ -4,7 +4,6 @@ pub const MASK_R3_R3:u16        = 0b0000_0000_0011_1111;
 pub const MASK_R3_R3_R3:u16     = 0b0000_0001_1111_1111;
 pub const MASK_N1_R4_RN3:u16    = 0b0000_0000_1111_1111;
 pub const MASK_R3_IMM8:u16      = 0b0000_0111_1111_1111;
-pub const MASK_IMM7:u16         = 0b0000_0000_0111_1111;
 pub const MASK_NOP:u16          = 0b0000_0000_1111_1111;
 pub const MASK_IMM5_R3_R3:u16   = 0b0000_0111_1111_1111;
 pub const MASK_C4_IMM8:u16      = 0b0000_1111_1111_1111;
@@ -63,4 +62,20 @@ pub fn decode_imm5_r3_r3(opcode: u16) -> (u32, usize, usize){
     )
 }
 
+pub fn decode_c4_imm8(opcode: u16) -> (u32, u32){
+    (
+        ((opcode & 0b0000_1111_0000_0000) >> 8) as u32,
+        ((opcode & 0b0000_0000_1111_1111)) as u32,
+    ) 
+}
 
+pub fn decode_x1_rl8(opcode: u16) -> (bool, u8){
+    (
+        (opcode & 0b0000_0001_0000_0000) > 0,
+        ((opcode & 0b0000_0000_1111_1111)) as u8,
+    )
+}
+
+pub fn decode_r4_q3(opcode: u16) -> LongRegister{
+        LongRegister{register: ((opcode & 0b0000_0000_0111_1000) >> 3) as usize}
+}

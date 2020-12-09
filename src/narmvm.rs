@@ -121,7 +121,7 @@ impl NarmVM{
                 },
                 //1010_0xxx_yyyy_yyyy ADR T1
                 0b1010_0000_0000_0000 => {
-                    self.sreg[reg] = self.last_pc.align4() + ((imm as u32) << 2);
+                    self.sreg[reg] = self.virtual_pc.align4() + ((imm as u32) << 2);
                     return Ok(0);
                 },
                 //0010_1xxx_yyyy_yyyy CMP imm T1
@@ -179,7 +179,7 @@ impl NarmVM{
                 //1110_0xxx_xxxx_xxxx B T2
                 0b1110_0000_0000_0000 => {
                     let label = sign_extend32((((reg as u32) << 8) | (imm as u32)) << 1, 12);
-                    self.pc = (self.last_pc as i32 + label) as u32;
+                    self.pc = (self.virtual_pc as i32 + label) as u32;
                     return Ok(0);
                 }
                 _ => {}
@@ -592,15 +592,127 @@ impl NarmVM{
                     let address = self.sreg[reg1].wrapping_add(imm);
                     self.memory.set_u16(address, (self.sreg[reg2] & 0xFFFF) as u16)?;
                     return Ok(0); 
+                },
+                _ => {}
+            }
+        }
+        //B<C> and SVC
+        {
+            let op = MASK_C4_IMM8;
+            //1101_cccc_xxxx_xxxx B<c> T1 (note: if cond == '1110' then UNDEFINED????)
+            //1101_1111_xxxx_xxxx SVC T1 (B with condition code 1111)
+            if op == 0b1101_0000_0000_0000{
+                let (cond, imm) = decode_c4_imm8(opcode);
+                if cond == 0b1111{
+                    //SVC opcode, so just exit with specified code
+                    return Ok(imm);
                 }
-
-
+                let label = sign_extend32(imm, 8);
+                self.pc = (self.virtual_pc as i32 + label) as u32;
+                return Ok(0);
+            }
+        }
+        //imm5_r3_r3
+        {
+            let op = opcode & !MASK_X1_RL8;
+            let (option, reglist) = decode_x1_rl8(opcode);
+            match op{
+                //1011_110x_yyyy_yyyy POP T1 (x is if PC should be popped)
+                0b1011_1100_0000_0000 => {
+                    let mut address = self.get_sp();;
+                    let mut count = 0;
+                    for i in 0..7{
+                        if reglist.get_bit(i){
+                            self.sreg[i as usize] = self.memory.get_u32(address)?;
+                            address += 4;
+                            count += 1;
+                        }
+                    }
+                    if option{
+                        //pop PC
+                        self.set_pc(self.memory.get_u32(address)?);
+                        count += 1;
+                    }
+                    self.set_sp(self.get_sp() + 4 * count);
+                    return Ok(0);
+                },
+                //1011_010x_yyyy_yyyy PUSH T1 (x is if LR should be pushed)
+                0b1011_0100_0000_0000 => {
+                    let mut address = self.get_sp() - 4 * reglist.count_ones();
+                    if option{
+                        address -= 4;
+                    }
+                    let mut count = 0;
+                    for i in 0..7{
+                        if reglist.get_bit(i){
+                            self.memory.set_u32(address, self.sreg[i as usize])?;
+                            address += 4;
+                            count += 1;
+                        }
+                    }
+                    if option{
+                        //push LR
+                        let lr = LongRegister{register: 14};
+                        self.set_reg(&lr, self.memory.get_u32(address)?);
+                        count += 1;
+                    }
+                    self.set_sp(self.get_sp() - 4 * count);
+                    return Ok(0); 
+                },
+                _ => {}
+            }
+        }
+        //r4_q3
+        {
+            let op = opcode & !MASK_R4_Q3;
+            let reg = decode_r4_q3(opcode);
+            let value = self.get_reg(&reg); 
+            match op{
+                //0100_0111_0xxx_xLLL BX T1
+                0b0100_0111_0000_0000 => {
+                    self.set_pc(value);
+                    return Ok(0);
+                },
+                //0100_0111_1xxx_xLLL BLX T1
+                0b0100_0111_1000_0000 => {
+                    let lr = LongRegister{register: 14};
+                    self.set_reg(&lr, (self.virtual_pc - 2) | 1);
+                    self.set_pc(value);
+                    return Ok(0);
+                }
                 _ => {}
             }
         }
 
+
         Err(NarmError::InvalidOpcode(opcode))
     }
+    fn condition_passes(&self, condition: u32) -> bool{
+        let c = self.cpsr.c;
+        let n = self.cpsr.n;
+        let v = self.cpsr.v;
+        let z = self.cpsr.z;
+        match condition{
+            0b0000 => z,
+            0b0001 => !z,
+            0b0010 => c,
+            0b0011 => !c,
+            0b0100 => n,
+            0b0101 => !n,
+            0b0110 => v,
+            0b0111 => !v,
+            0b1000 => c & !z,
+            0b1001 => !c | z,
+            0b1010 => n == v,
+            0b1011 => n != v,
+            0b1100 => !z & (n == v),
+            0b1101 => z | (n != v),
+            0b1110 => true, //undefined in ARMv6-M? Means ALWAYS otherwise
+            0b1111 => false, //means SVC, shouldn't be done here
+            _ => false //should never happen
+        }
+    }
+
     fn set_result_flags(&mut self, result: u32){
         self.cpsr.n = result.get_bit(31);
         self.cpsr.z = result == 0;
@@ -632,6 +744,10 @@ impl NarmVM{
     }
     pub fn get_sp(&self) -> u32{
         self.long_registers[13 - 8]
+    }
+    pub fn set_sp(&mut self, value: u32){
+        let r = LongRegister{register: 13};
+        self.set_reg(&r, value);
     }
     pub fn set_reg(&mut self, reg: &LongRegister, value: u32){
         let mut final_value = value;
