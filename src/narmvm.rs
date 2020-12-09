@@ -57,6 +57,25 @@ impl NarmVM{
         self.last_pc = self.pc;
         let opcode = self.memory.get_u16(self.pc)?;
         self.pc += 2;
+
+        //NOP pattern
+        {
+            let op = opcode & !MASK_NOP;
+            //1011_1111_1QQQ_QQQQ NOP HINT catch all (can be safely treated as imm8
+            //1011_1111_0000_0000 NOP T1
+            //1011_1111_0100_0000 SEV nop
+            //1011_1111_0010_0000 WFE T1 nop
+            //1011_1111_0011_0000 WFI T1 nop
+            //1011_1111_0001_0000 YIELD T1 nop
+            if op == 0b1011_1111_0000_0000{
+                return Ok(0);
+            }
+            //1101_1110_QQQQ_QQQQ UDF error T1, causes error either way
+            if op == 0b1101_1110_0000_0000{
+                return Err(NarmError::InvalidOpcode(op));
+            }
+        }
+
         //opcodes for r3_imm8, r3_reglist, and imm11
         {
             let op = opcode & !MASK_R3_IMM8;
@@ -166,6 +185,7 @@ impl NarmVM{
                 _ => {}
             }
         }
+
         //opcodes for r3_r3
         {
             let op = opcode & !MASK_R3_R3;
@@ -241,6 +261,7 @@ impl NarmVM{
                 },
                 //0000_0000_00xx_xyyy MOVS reg T2 flags
                 0b0000_0000_0000_0000 => {
+                    //NOTE: this shares the same identifying "mask" as LSL imm T1.
                     self.sreg[reg2] = valuem;
                     self.set_result_flags(valuem);
                     return Ok(0);
@@ -347,6 +368,7 @@ impl NarmVM{
 
             }
         }
+
         //opcodes for r3_r3_r3 and imm3_r3_r3
         {
             let op = opcode & !MASK_R3_R3_R3;
@@ -428,6 +450,155 @@ impl NarmVM{
                 _ => {}
             }
         }
+
+        //n1_r4_rn3
+        {
+            let op = opcode & !MASK_N1_R4_RN3;
+            let (reg1, reg2) = decode_n1_r4_rn3(opcode);
+            match op{
+                //0100_0101_xyyy_yzzz CMP reg T2 
+                0b0100_0101_0000_0000 => {
+                    //Either register being from PC (r15) is considered unpredictable by ARM architecture. To prevent weirdness with later upgrades, this will be forced to 0
+                    let rm = if reg1.register == 15{
+                        0
+                    }else{
+                        self.get_reg(&reg1)
+                    };
+                    let rn = if reg2.register == 15{
+                        0
+                    }else{
+                        self.get_reg(&reg2)
+                    };
+                    self.op_add(rn, !rm, true, true);
+                    return Ok(0);
+                },
+                //0100_0100_xyyy_yzzz ADD reg T2 noflags
+                //0100_0100_x110_1yyy ADD sp+reg T1 noflags (2nd arg must be 1101) -PSUEDO
+                //0100_0100_1xxx_x101 ADD sp+reg T2 noflags (1st and 3rd args form 1101) -PSUEDO
+                0b0100_0100_0000_0000 => {
+                    //note! order of deciding to deal with reg2 vs reg1 being equal to 13 is critical!
+                    //if reg2 is 13, then the T1 encoding logic must be used
+                    if reg1.register == 13{
+                        //sp+reg T1
+                        //ADD <Rdm>, SP, <Rdm>
+                        let rm = self.get_reg(&reg2);
+                        let sp = self.get_reg(&reg1);
+                        let result = self.op_add(sp, rm, false, false);
+                        self.set_reg(&reg2, result);
+                    }else if reg2.register == 13{
+                        //sp+reg T2
+                        //ADD SP,<Rm>
+                        let rm = self.get_reg(&reg1);
+                        let sp = self.get_reg(&reg2);
+                        let result = self.op_add(sp, rm, false, false);
+                        self.set_reg(&reg2, result);
+                    }else{
+                        if reg1.register == 15 && reg2.register == 15{
+                            //listed as UNPREDICTABLE, so just exit here
+                            return Ok(0);
+                        }
+                        let rm = self.get_reg(&reg1);
+                        let rn = self.get_reg(&reg2);
+                        let result = self.op_add(rn, rm, false, false);
+                        self.set_reg(&reg2, result);
+                    }
+                    return Ok(0);
+                },
+                _ => {}
+            }
+        }
+
+        //imm5_r3_r3
+        {
+            let op = opcode & !MASK_IMM5_R3_R3;
+            let (imm, reg1, reg2) = decode_imm5_r3_r3(opcode);
+            match op{
+                //0001_0xxx_xxyy_yzzz ASR imm T1 flags
+                0b0001_0000_0000_0000 => {
+                    //shift_t = SRType_ASR; shift_n = if imm5 == '00000' then 32 else UInt(imm5);
+                    let shift = if imm == 0{
+                        32
+                    }else{
+                        imm
+                    };
+                    let (result, carry) = (self.sreg[reg1] as i32).overflowing_shr(shift);
+                    self.sreg[reg2] = result as u32;
+                    self.set_result_flags(result as u32);
+                    self.cpsr.c = carry;
+                    return Ok(0); 
+                },
+                //0110_1xxx_xxyy_yzzz LDR imm T1
+                0b0110_1000_0000_0000 => {
+                    let imm = imm << 2;
+                    let address = self.sreg[reg1].wrapping_add(imm);
+                    self.sreg[reg2] = self.memory.get_u32(address)?;
+                    return Ok(0);
+                },
+                //0111_1xxx_xxyy_yzzz LDRB imm T1
+                0b0111_1000_0000_0000 => {
+                    let address = self.sreg[reg1].wrapping_add(imm);
+                    self.sreg[reg2] = self.memory.get_u8(address)? as u32;
+                    return Ok(0); 
+                }
+                //1000_1xxx_xxyy_yzzz LDRH imm T1
+                0b1000_1000_0000_0000 => {
+                    let imm = imm << 1;
+                    let address = self.sreg[reg1].wrapping_add(imm);
+                    self.sreg[reg2] = self.memory.get_u16(address)? as u32;
+                    return Ok(0);   
+                }
+                //0000_0xxx_xxyy_yzzz LSL imm T1 flags
+                0b0000_0000_0000_0000 => {
+                    //note this shares the same identifying mask as MOV reg T2
+                    //they only conflict if the imm5 argument here is 0. Thus, if imm5 is 0, then defer execution, as the mov instruction should execute instead
+                    //this shouldn't ever happen right now, but if the opcode decoding logic were reorganized it could happen in the future, so guard for it now by doing nothing if imm5 is 0
+                    if imm != 0{
+                        let (result, carry) = self.sreg[reg1].overflowing_shl(imm);
+                        self.sreg[reg2] = result;
+                        self.set_result_flags(result);
+                        self.cpsr.c = carry;
+                        return Ok(0);
+                    }
+                },
+                //0000_1xxx_xxyy_yzzz LSR imm T1 flags
+                0b0000_1000_0000_0000 => {
+                    let imm = if imm == 0{
+                        32
+                    }else{
+                        imm
+                    };
+                    let (result, carry) = self.sreg[reg1].overflowing_shr(imm);
+                    self.sreg[reg2] = result;
+                    self.set_result_flags(result);
+                    self.cpsr.c = carry; 
+                    return Ok(0);
+                },
+                //0110_0xxx_xxyy_yzzz STR imm T1
+                0b0110_0000_0000_0000 => {
+                    let imm = imm << 2;
+                    let address = self.sreg[reg1].wrapping_add(imm);
+                    self.memory.set_u32(address, self.sreg[reg2])?;
+                    return Ok(0); 
+                },
+                //0111_0xxx_xxyy_yzzz STRB imm T1
+                0b0111_0000_0000_0000 => {
+                    let address = self.sreg[reg1].wrapping_add(imm);
+                    self.memory.set_u8(address, (self.sreg[reg2] & 0xFF) as u8)?;
+                    return Ok(0); 
+                },
+                //1000_0xxx_xxyy_yzzz STRH imm T
+                0b1000_0000_0000_0000 => {
+                    let imm = imm << 1;
+                    let address = self.sreg[reg1].wrapping_add(imm);
+                    self.memory.set_u16(address, (self.sreg[reg2] & 0xFFFF) as u16)?;
+                    return Ok(0); 
+                }
+
+
+                _ => {}
+            }
+        }
+
         Err(NarmError::InvalidOpcode(opcode))
     }
     fn set_result_flags(&mut self, result: u32){
@@ -462,7 +633,7 @@ impl NarmVM{
     pub fn get_sp(&self) -> u32{
         self.long_registers[13 - 8]
     }
-    pub fn set_reg(&mut self, reg: LongRegister, value: u32){
+    pub fn set_reg(&mut self, reg: &LongRegister, value: u32){
         let mut final_value = value;
         let reg = reg.register;
         if reg == 13{
@@ -478,7 +649,7 @@ impl NarmVM{
             self.long_registers[reg as usize - 8] = final_value;
         }
     }
-    pub fn get_reg(& self, reg: LongRegister) -> u32{
+    pub fn get_reg(& self, reg: &LongRegister) -> u32{
         let reg = reg.register;
         if reg == 15{
             //special handling for r15/PC
