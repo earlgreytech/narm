@@ -1,6 +1,10 @@
 # narm
 Neutron ARM VM experiment 
 
+This is an small experimental project to write an ARM VM that is suitable for use in Neutron. It only supports a subset of the ARMv6-M instruction set, which is missing several key opcodes necessary for efficient smart contracts (such as division), but can otherwise allow for Neutron smart contracts to be written in Rust targeting the ARM platform. Rust has much better support for ARM "embedded" than x86 embedded, thus these smart contracts could be written without involving Xargo and nightly compilers. The ARM architecture is also significantly more simple (indicated by the fact that this took a few days to write vs months for qx86) to write a VM against, and thus it may have some performance improvements. Oddly enough, though I have a hard time believing it, ARM also is known to on average generate a smaller amount of bytecode compared to x86 programs, and since ARM on tiny microcontrollers is a common use case, ARM compilers tend to have stronger size optimizations. 
+
+Regardless, this is almost completely untested at this point and likely has several bugs. Not for use in production etc. 
+
 
 # Subset
 
