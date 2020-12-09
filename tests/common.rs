@@ -1,14 +1,11 @@
 extern crate elf;
 
-use std::env;
-use std::path::PathBuf;
 use narm::narmvm::*;
 
 
 const MAX_GAS:u64 = 10000000;
 
 pub fn create_test_vm(file: &str) -> NarmVM {
-    let path = PathBuf::from(file);
     let prefix = "tests/bin/";
     let file = elf::File::open_path([prefix, file].join("")).unwrap();
 
