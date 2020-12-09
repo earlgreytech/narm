@@ -58,6 +58,37 @@ impl NarmVM{
         let opcode = self.memory.get_u16(self.pc)?;
         self.pc += 2;
 
+        if is_32bit_opcode(opcode){
+            
+            let opcode32 = ((opcode as u32) << 16) | (self.memory.get_u16(self.pc)? as u32);
+            self.pc += 2;
+            let opcode32 = opcode32 & !MASK32_X1_IMM10_X1_X1_IMM11;
+            let (s, imm1, j1, j2, imm2) = decode32_x1_imm10_x1_x1_imm11(opcode32);
+            //BL T1, 32bit instruction. J is split into J1 and J2. x, y, and z is combined into one argument using all of the arguments together which control sign extension etc. Allows -16777216 to +16777214
+                           //1111_0xyy_yyyy_yyyy_11J1_Jzzz_zzzz_zzzz 
+            if opcode32 == 0b1111_0000_0000_0000_1101_0000_0000_0000{
+                //I1 = NOT(J1 EOR S);  I2 = NOT(J2 EOR S);  imm32 = SignExtend(S:I1:I2:imm10:imm11:'0', 32);
+                let s1 = s as u32;
+                let i1 = (!(j1 ^ s)) as u32;
+                let i2 = (!(j2 ^ s)) as u32;
+                let value = 
+                    s1      << 24 |  //1 bit (1+1+10+11+1)
+                    i1      << 23 |  //1 bit (1+10+11+1)
+                    i2      << 22 |  //1 bit (10+11+1)
+                    imm1    << 12 | //10 bits (11+1)
+                    imm2    << 1;   //11 bits, bottom bit is 0
+                //25 bits total length
+                let imm32 = sign_extend32(value, 25);
+                let lr = LongRegister{register: 14};
+                self.set_reg(&lr, self.virtual_pc | 1);
+                self.set_pc((self.virtual_pc as i32).wrapping_add(imm32) as u32);
+                return Ok(0);
+            }else{
+                //later support MSR/MRS?
+                return Err(NarmError::InvalidOpcode32(opcode32));
+            }
+        }
+
         //NOP pattern
         {
             let op = opcode & !MASK_NOP;

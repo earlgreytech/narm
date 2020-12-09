@@ -9,7 +9,8 @@ pub const MASK_IMM5_R3_R3:u16   = 0b0000_0111_1111_1111;
 pub const MASK_C4_IMM8:u16      = 0b0000_1111_1111_1111;
 pub const MASK_R4_Q3:u16        = 0b0000_0000_0111_1111;
 pub const MASK_X1_RL8:u16       = 0b0000_0001_1111_1111;
-pub const MASK_NONE:u16         = 0b0000_0000_0000_0000;
+
+pub const MASK32_X1_IMM10_X1_X1_IMM11:u32 = 0b0000_0111_1111_1111_0010_1111_1111_1111;
 
 /// This specifies a register beyond r0-r7
 /// It is not strictly necessary to be organized like this, but used to prevent programmer errors
@@ -78,4 +79,14 @@ pub fn decode_x1_rl8(opcode: u16) -> (bool, u8){
 
 pub fn decode_r4_q3(opcode: u16) -> LongRegister{
         LongRegister{register: ((opcode & 0b0000_0000_0111_1000) >> 3) as usize}
+}
+
+pub fn decode32_x1_imm10_x1_x1_imm11(opcode: u32) -> (bool, u32, bool, bool, u32){
+    (
+        ((opcode & 0b0000_0100_0000_0000_0000_0000_0000_0000)) > 0,
+        ((opcode & 0b0000_0011_1111_1111_0000_0000_0000_0000) >> 16),
+        ((opcode & 0b0000_0000_0000_0000_0010_0000_0000_0000) > 0),
+        ((opcode & 0b0000_0000_0000_0000_0000_1000_0000_0000) > 0),
+        ((opcode & 0b0000_0000_0000_0000_0000_0111_1111_1111))
+    ) 
 }

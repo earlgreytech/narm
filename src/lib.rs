@@ -22,7 +22,8 @@ pub enum  NarmError{
     ReadOnlyMemoryWrite(u32),
     UnalignedMemoryAddition,
     ConflictingMemoryAddition,
-    InvalidOpcode(u16)
+    InvalidOpcode(u16),
+    InvalidOpcode32(u32)
 }
 
 
