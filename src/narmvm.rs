@@ -166,6 +166,7 @@ impl NarmVM{
                 _ => {}
             }
         }
+        //opcodes for r3_r3
         {
             let op = opcode & !MASK_R3_R3;
             let (reg1, reg2) = decode_r3_r3(opcode);
@@ -344,6 +345,87 @@ impl NarmVM{
                 },
                 _ => {}
 
+            }
+        }
+        //opcodes for r3_r3_r3 and imm3_r3_r3
+        {
+            let op = opcode & !MASK_R3_R3_R3;
+            let (reg1, reg2, reg3) = decode_r3_r3_r3(opcode);
+            let valuem = self.sreg[reg1];
+            let valuen= self.sreg[reg2];
+            //reg3 is almost always destination register
+            match op{
+                //0001_100x_xxyy_yzzz ADDS reg T1 flags
+                0b0001_1000_0000_0000 => {
+                    self.sreg[reg3] = self.op_add(valuen, valuem, false, true);
+                    return Ok(0);
+                },
+                //0101_100x_xxyy_yzzz LDR reg T1
+                0b0101_1000_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.sreg[reg3] = self.memory.get_u32(address)?;
+                    return Ok(0);
+                },
+                //0101_110x_xxyy_yzzz LDRB reg T1
+                0b0101_1100_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.sreg[reg3] = self.memory.get_u8(address)? as u32;
+                    return Ok(0);
+                },
+                //0101_101x_xxyy_yzzz LDRH reg T1
+                0b0101_1010_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.sreg[reg3] = self.memory.get_u16(address)? as u32;
+                    return Ok(0);
+                },
+                //0101_011x_xxyy_yzzz LDRSB reg T1
+                0b0101_0110_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.sreg[reg3] = self.memory.get_u8(address)? as i8 as i32 as u32;
+                    return Ok(0);
+                },
+                //0101_111x_xxyy_yzzz LDRSH reg T1
+                0b0101_1110_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.sreg[reg3] = self.memory.get_u16(address)? as i16 as i32 as u32;
+                    return Ok(0);
+                },
+                //0101_000x_xxyy_yzzz STR reg T1
+                0b0101_0000_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.memory.set_u32(address, self.sreg[reg3])?;
+                    return Ok(0);
+                },
+                //0101_010x_xxyy_yzzz STRB reg T1
+                0b0101_0100_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.memory.set_u8(address, (self.sreg[reg3] & 0xFF) as u8)?;
+                    return Ok(0);
+                },
+                //0101_001x_xxyy_yzzz STRH reg T1
+                0b0101_0010_0000_0000 => {
+                    let address = valuen.wrapping_add(valuem);
+                    self.memory.set_u16(address, (self.sreg[reg3] & 0xFFFF) as u16)?;
+                    return Ok(0);
+                },
+                //0001_101x_xxyy_yzzz SUBS reg T1 flags
+                0b0001_1010_0000_0000 => {
+                    self.sreg[reg3] = self.op_add(valuen, !valuem, true, true);
+                    return Ok(0);
+                },
+                //0001_111x_xxyy_yzzz SUBS imm T1 flags
+                0b0001_1110_0000_0000 => {
+                    let imm3 = reg1 as u32;
+                    self.sreg[reg3] = self.op_add(self.sreg[reg2], !imm3, true, true);
+                    return Ok(0);
+                },
+                //0001_110x_xxyy_yzzz ADD imm T1 flags
+                0b0001_1100_0000_0000 => {
+                    let imm3 = reg1 as u32;
+                    self.sreg[reg3] = self.op_add(self.sreg[reg2], imm3, false, true);
+                    return Ok(0);
+                },
+                _ => {}
             }
         }
         Err(NarmError::InvalidOpcode(opcode))

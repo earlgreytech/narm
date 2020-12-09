@@ -37,5 +37,13 @@ pub fn decode_r3_imm8(opcode: u16) -> (usize, u8){
         (opcode & 0b0000_0000_1111_1111) as u8)
 }
 
+pub fn decode_r3_r3_r3(opcode: u16) -> (usize, usize, usize){
+    (
+        ((opcode & 0b0000_0001_1100_0000) >> 6) as usize,
+        ((opcode & 0b0000_0000_0011_1000) >> 3) as usize,
+        ((opcode & 0b0000_0000_0000_0111)) as usize
+    )
+}
+
 
 
