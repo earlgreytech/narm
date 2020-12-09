@@ -50,9 +50,25 @@ impl NarmVM{
     //returns either a service call number (from SVC instruction) or an error
     //Note there is no equivalent to x86 "hlt" in ARM
     pub fn execute(&mut self) -> Result<u32, NarmError>{
-        Ok(0)
+        loop{
+            let result = self.cycle();
+            match result{
+                Ok(x) => {
+                    if x != 0{
+                        return Ok(x);
+                    }
+                },
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+        }
     }
     pub fn cycle(&mut self) -> Result<u32, NarmError>{
+        if self.gas_remaining == 0{
+            return Err(NarmError::OutOfGas);
+        }
+        self.gas_remaining -= 1;
         self.virtual_pc = self.pc.align4() + 4;
         self.last_pc = self.pc;
         let opcode = self.memory.get_u16(self.pc)?;
@@ -638,8 +654,10 @@ impl NarmVM{
                     //SVC opcode, so just exit with specified code
                     return Ok(imm);
                 }
-                let label = sign_extend32(imm, 8);
-                self.pc = (self.virtual_pc as i32 + label) as u32;
+                if self.condition_passes(cond){
+                    let label = sign_extend32(imm, 8);
+                    self.pc = (self.virtual_pc as i32 + label) as u32;
+                }
                 return Ok(0);
             }
         }
@@ -650,7 +668,7 @@ impl NarmVM{
             match op{
                 //1011_110x_yyyy_yyyy POP T1 (x is if PC should be popped)
                 0b1011_1100_0000_0000 => {
-                    let mut address = self.get_sp();;
+                    let mut address = self.get_sp();
                     let mut count = 0;
                     for i in 0..7{
                         if reglist.get_bit(i){
@@ -819,6 +837,16 @@ impl NarmVM{
             return self.pc;
         }
         0
+    }
+    pub fn print_diagnostics(&self){
+        for i in 0..15{
+            println!("r{}: {:#010x}", i, self.external_get_reg(i));
+        }
+        println!("z: {}", self.cpsr.z);
+        println!("n: {}", self.cpsr.n);
+        println!("c: {}", self.cpsr.c);
+        println!("v: {}", self.cpsr.v);
+        println!("gas remaining: {}", self.gas_remaining);
     }
     /// Helper function to simplify copying a set of data into VM memory
     pub fn copy_into_memory(&mut self, address: u32, data: &[u8]) -> Result<(), NarmError>{

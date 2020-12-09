@@ -3,7 +3,7 @@ extern crate elf;
 use narm::narmvm::*;
 
 
-const MAX_GAS:u64 = 10000000;
+const DEFAULT_GAS:u64 = 10000;
 
 pub fn create_test_vm(file: &str) -> NarmVM {
     let prefix = "tests/bin/";
@@ -19,6 +19,7 @@ pub fn create_test_vm(file: &str) -> NarmVM {
     vm.memory.add_memory(0x10000, 0xFFFF).unwrap();
     vm.copy_into_memory(0x10000, &text_scn.data).unwrap();
     vm.set_pc(0x10000);
+    vm.gas_remaining = DEFAULT_GAS;
     vm
 }
 /*

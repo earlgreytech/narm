@@ -23,7 +23,8 @@ pub enum  NarmError{
     UnalignedMemoryAddition,
     ConflictingMemoryAddition,
     InvalidOpcode(u16),
-    InvalidOpcode32(u32)
+    InvalidOpcode32(u32),
+    OutOfGas
 }
 
 
