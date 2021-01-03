@@ -2,6 +2,7 @@ use crate::memory::*;
 use crate::NarmError;
 use crate::decode::*;
 use crate::bitmanip::*;
+use crate::*;
 
 
 #[derive(Default)]

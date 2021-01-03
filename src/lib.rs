@@ -27,6 +27,11 @@ pub enum  NarmError{
     OutOfGas
 }
 
+/// This specifies a register beyond r0-r7
+/// It is not strictly necessary to be organized like this, but used to prevent programmer errors
+pub struct LongRegister{
+    pub register: usize
+}
 
 
 #[cfg(test)]

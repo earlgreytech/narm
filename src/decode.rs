@@ -1,3 +1,4 @@
+use crate::*;
 
 //argument masks
 pub const MASK_R3_R3:u16        = 0b0000_0000_0011_1111;
@@ -12,11 +13,6 @@ pub const MASK_X1_RL8:u16       = 0b0000_0001_1111_1111;
 
 pub const MASK32_X1_IMM10_X1_X1_IMM11:u32 = 0b0000_0111_1111_1111_0010_1111_1111_1111;
 
-/// This specifies a register beyond r0-r7
-/// It is not strictly necessary to be organized like this, but used to prevent programmer errors
-pub struct LongRegister{
-    pub register: usize
-}
 
 
 pub fn is_32bit_opcode(opcode: u16) -> bool{
