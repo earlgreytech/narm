@@ -7,9 +7,7 @@ use common::*;
 #[test]
 pub fn test_orr_one(){
     let mut vm = create_test_vm("test_orr_one");
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
+    multistep_vm!(3, vm);
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0x1);
 }
@@ -18,9 +16,7 @@ pub fn test_orr_one(){
 #[test]
 pub fn test_orr_saturation(){
     let mut vm = create_test_vm("test_orr_saturation");
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
+    multistep_vm!(3, vm);
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0xFF);
 }

@@ -7,9 +7,7 @@ use common::*;
 #[test]
 pub fn test_and_one(){
     let mut vm = create_test_vm("test_and_one");
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
+    multistep_vm!(3, vm);
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0x1);
 }
@@ -18,9 +16,7 @@ pub fn test_and_one(){
 #[test]
 pub fn test_and_negation(){
     let mut vm = create_test_vm("test_and_negation");
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
+    multistep_vm!(3, vm);
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0x0);
 }

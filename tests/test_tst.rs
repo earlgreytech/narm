@@ -7,7 +7,7 @@ use common::*;
 #[test]
 pub fn test_tst_zero(){
     let mut vm = create_test_vm("test_tst_zero");
-    vm.cycle().unwrap();
+    multistep_vm!(1, vm);
     vm.print_diagnostics();
     assert!(vm.cpsr.z);
 }
@@ -16,9 +16,7 @@ pub fn test_tst_zero(){
 #[test]
 pub fn test_tst_negation(){
     let mut vm = create_test_vm("test_tst_negation");
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
-    vm.cycle().unwrap();
+    multistep_vm!(3, vm);
     vm.print_diagnostics();
     assert!(vm.cpsr.z);
 }
