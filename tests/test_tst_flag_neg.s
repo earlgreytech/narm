@@ -3,9 +3,10 @@
 .thumb_func
 _start:
     .globl _start
-    movs r1, #0x55
-    movs r2, #0xAA
-    tst r1, r2
+    movs r0, #0x2
+    lsls r0, #0xf
+    lsls r0, #0xf
+    tst r0, r0
 1: 
     b 1b @ Halt
 
