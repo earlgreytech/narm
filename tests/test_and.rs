@@ -9,19 +9,10 @@ Unit test for bitwise AND operator
 Very basic functionality tests here because of the operation's simplicity
 */
 
-// Test if AND(0, 1) = 1
+// Test using two register values
 #[test]
-pub fn test_and_one(){
-    let mut vm = create_test_vm("test_and_one");
-    vm.execute().unwrap();
-    vm.print_diagnostics();
-    assert_eq!(vm.external_get_reg(0), 0x1);
-}
-
-// Test if AND(1010 1010, 0101 0101) = 0000 0000
-#[test]
-pub fn test_and_negation(){
-    let mut vm = create_test_vm("test_and_negation");
+pub fn test_and_register(){
+    let mut vm = create_test_vm("test_and_register");
     vm.execute().unwrap();
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0x0);
