@@ -13,7 +13,7 @@ Copies the relevant test cases from the AND unit test
 #[test]
 pub fn test_tst_flag_zero(){
     let mut vm = create_test_vm("test_tst_flag_zero");
-    multistep_vm!(1, vm);
+    vm.execute().unwrap();
     vm.print_diagnostics();
     assert!(vm.cpsr.z);
 }
@@ -23,7 +23,7 @@ pub fn test_tst_flag_zero(){
 #[test]
 pub fn test_tst_flag_neg(){
     let mut vm = create_test_vm("test_tst_flag_neg");
-    multistep_vm!(4, vm);
+    vm.execute().unwrap();
     vm.print_diagnostics();
     assert!(vm.cpsr.n);
 }

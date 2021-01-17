@@ -6,6 +6,7 @@ _start:
     movs r0, #0x55
     movs r1, #0xAA
     ands r0, r1
+    svc #0x1
 1: 
     b 1b @ Halt
 

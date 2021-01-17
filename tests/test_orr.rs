@@ -13,7 +13,7 @@ Very basic functionality tests here because of the operation's simplicity
 #[test]
 pub fn test_orr_one(){
     let mut vm = create_test_vm("test_orr_one");
-    multistep_vm!(3, vm);
+    vm.execute().unwrap();
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0x1);
 }
@@ -22,7 +22,7 @@ pub fn test_orr_one(){
 #[test]
 pub fn test_orr_saturation(){
     let mut vm = create_test_vm("test_orr_saturation");
-    multistep_vm!(3, vm);
+    vm.execute().unwrap();
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0xFF);
 }
@@ -31,7 +31,7 @@ pub fn test_orr_saturation(){
 #[test]
 pub fn test_orr_flag_zero(){
     let mut vm = create_test_vm("test_orr_flag_zero");
-    multistep_vm!(1, vm);
+    vm.execute().unwrap();
     vm.print_diagnostics();
     assert!(vm.cpsr.z);
 }
@@ -41,7 +41,7 @@ pub fn test_orr_flag_zero(){
 #[test]
 pub fn test_orr_flag_neg(){
     let mut vm = create_test_vm("test_orr_flag_neg");
-    multistep_vm!(4, vm);
+    vm.execute().unwrap();
     vm.print_diagnostics();
     assert!(vm.cpsr.n);
 }
