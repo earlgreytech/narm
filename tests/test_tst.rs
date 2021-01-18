@@ -4,9 +4,14 @@ mod common;
 use common::*;
 
 /*
+
 Unit test for TST operator - bitwise AND that only set flags and discard result
 
-Copies the relevant test cases from the AND unit test
+Included cases (same as for AND): 
+
+- Set Zero flag if result is zero
+- Set Negative flag if result is negative
+
 */
 
 // Test if TST(0, 0) correctly sets ZERO flag
@@ -18,7 +23,7 @@ pub fn test_tst_flag_zero(){
     assert!(vm.cpsr.z);
 }
 
-// Test if TST(1000 0000 0000 0000, 1000 0000 0000 0000) correctly sets NEGATIVE flag
+// Test if TST(1000 ... 0000, 1000 ... 0000) correctly sets NEGATIVE flag
 // ("highest" bit indicate sign in int representation, so setting it to 1 -> negative number)
 #[test]
 pub fn test_tst_flag_neg(){
