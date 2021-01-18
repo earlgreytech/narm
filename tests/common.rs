@@ -63,6 +63,27 @@ pub fn asm(input: &str) -> elf::File{
     // The following commands will be executed
     // arm-none-eabi-as -march=armv6s-m -o$OBJECT $INPUT
     // arm-none-eabi-ld -T link.ld -o$OUTPUT $OBJECTF
+    
+    let result = Command::new("arm-none-eabi-as").
+        arg("-march=armv6s-m").
+        arg(format!("{}{}", "-o", &object.to_str().unwrap())).
+        arg(&input).
+        output().unwrap();
+    println!("as stdout: {}", std::str::from_utf8(&result.stdout).unwrap());
+    println!("as stderr: {}", std::str::from_utf8(&result.stderr).unwrap());
+
+    let result = Command::new("arm-none-eabi-ld").
+        arg(format!("{}{}", "-T", &linkfile.to_str().unwrap())).
+        arg(format!("{}{}", "-o", &output.to_str().unwrap())).
+        arg(&object).
+        output().unwrap();
+
+    println!("ld stdout: {}", std::str::from_utf8(&result.stdout).unwrap());
+    println!("ld stderr: {}", std::str::from_utf8(&result.stderr).unwrap());
+
+    elf::File::open_path(output).unwrap()
+}
+
 // Macro to assert values of all condition flags
 #[macro_export]
 macro_rules! assert_flags_nzcv {
@@ -135,24 +156,5 @@ macro_rules! assert_lo_regs {
     ($vm:ident) 
     => { assert_lo_regs_all!($vm, 0, 0, 0, 0, 0, 0, 0, 0) };
 }
-    
-    let result = Command::new("arm-none-eabi-as").
-        arg("-march=armv6s-m").
-        arg(format!("{}{}", "-o", &object.to_str().unwrap())).
-        arg(&input).
-        output().unwrap();
-    println!("as stdout: {}", std::str::from_utf8(&result.stdout).unwrap());
-    println!("as stderr: {}", std::str::from_utf8(&result.stderr).unwrap());
 
-    let result = Command::new("arm-none-eabi-ld").
-        arg(format!("{}{}", "-T", &linkfile.to_str().unwrap())).
-        arg(format!("{}{}", "-o", &output.to_str().unwrap())).
-        arg(&object).
-        output().unwrap();
-
-    println!("ld stdout: {}", std::str::from_utf8(&result.stdout).unwrap());
-    println!("ld stderr: {}", std::str::from_utf8(&result.stderr).unwrap());
-
-    elf::File::open_path(output).unwrap()
-}
 

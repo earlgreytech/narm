@@ -24,8 +24,13 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 // Test if OR(0000 0101, 1010 1010) = 1010 1111
 #[test]
 pub fn test_orr_register(){
-    let mut vm = create_test_vm("test_orr_register");
-    vm.execute().unwrap();
+    let mut vm = create_vm_from_asm("
+        movs r0, #0x05
+        movs r1, #0xAA
+        orrs r0, r1
+        svc #0xFF
+    ");
+    assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
     assert_lo_regs!(vm, 0xAF, 0xAA);
     assert_flags_nzcv!(vm, false, false, false, false);
@@ -34,8 +39,11 @@ pub fn test_orr_register(){
 // Test if OR(0, 0) correctly sets ZERO flag
 #[test]
 pub fn test_orr_flag_zero(){
-    let mut vm = create_test_vm("test_orr_flag_zero");
-    vm.execute().unwrap();
+    let mut vm = create_vm_from_asm("
+        orrs r0, r1
+        svc #0xFF
+    ");
+    assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
     assert_lo_regs!(vm);
     assert_flags_nzcv!(vm, false, true, false, false);
@@ -45,8 +53,14 @@ pub fn test_orr_flag_zero(){
 // ("highest" bit indicate sign in int representation, so setting it to 1 -> negative number)
 #[test]
 pub fn test_orr_flag_neg(){
-    let mut vm = create_test_vm("test_orr_flag_neg");
-    vm.execute().unwrap();
+    let mut vm = create_vm_from_asm("
+        movs r0, #0x2
+        lsls r0, #0xf
+        lsls r0, #0xf
+        orrs r0, r0
+        svc #0xFF
+    ");
+    assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
     assert_lo_regs!(vm, 0x8000_0000);
     assert_flags_nzcv!(vm, true, false, false, false);
