@@ -7,19 +7,16 @@ const DEFAULT_GAS:u64 = 10000;
 
 #[cfg(test)]
 pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM{
-    let prefix = "tests/bin/";
     let file = asm(assembly_code);
 
     let text_scn = file.get_section(".text").unwrap();
-    assert!(text_scn.shdr.addr == 0x10000);
-    assert!(text_scn.data.len() < 0xFFFF);
-    //let data_scn = file.get_section(".data").unwrap();
-    //assert!(data_scn.shdr.addr == 0x80020000);
+    assert!(text_scn.shdr.addr == 0x1_0000);
+    assert!(text_scn.data.len() < 0x1_0000);
 
     let mut vm = NarmVM::default();
-    vm.memory.add_memory(0x10000, 0xFFFF).unwrap();
-    vm.copy_into_memory(0x10000, &text_scn.data).unwrap();
-    vm.set_pc(0x10000);
+    vm.memory.add_memory(0x1_0000, 0x1_0000).unwrap();
+    vm.copy_into_memory(0x1_0000, &text_scn.data).unwrap();
+    vm.set_pc(0x1_0000);
     vm.gas_remaining = DEFAULT_GAS;
     vm
 }
@@ -52,7 +49,6 @@ pub fn asm(input: &str) -> elf::File{
     let object = dir.path().join("test_code.o");
     let output = dir.path().join("test_code.elf");
     let linkfile = dir.path().join("link.ld");
-    //println!("input: {}", input.to_str().unwrap());
     println!("asm: {}\n---------------", asm);
 
     let mut f1 = std::fs::File::create(&input).unwrap();
@@ -63,6 +59,10 @@ pub fn asm(input: &str) -> elf::File{
     let mut f2 = std::fs::File::create(&linkfile).unwrap();
     writeln!(f2,"{}", linkerscript).unwrap();
     f2.flush().unwrap();
+
+    // The following commands will be executed
+    // arm-none-eabi-as -march=armv6s-m -o$OBJECT $INPUT
+    // arm-none-eabi-ld -T link.ld -o$OUTPUT $OBJECTF
     
     let result = Command::new("arm-none-eabi-as").
         arg("-march=armv6s-m").
@@ -80,8 +80,6 @@ pub fn asm(input: &str) -> elf::File{
 
     println!("ld stdout: {}", std::str::from_utf8(&result.stdout).unwrap());
     println!("ld stderr: {}", std::str::from_utf8(&result.stderr).unwrap());
-    //  arm-none-eabi-as -march=armv6s-m -o $OBJECTFILE $f
-    //  arm-none-eabi-ld -T link.ld -o $FINALFILE $OBJECTFILE
 
     elf::File::open_path(output).unwrap()
 }
