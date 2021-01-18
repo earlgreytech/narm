@@ -5,6 +5,4 @@ _start:
     .globl _start
     ands r0, r0
     svc #0x1
-1: 
-    b 1b @ Halt
 
