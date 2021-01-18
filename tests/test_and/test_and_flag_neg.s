@@ -7,5 +7,5 @@ _start:
     lsls r0, #0xf
     lsls r0, #0xf
     ands r0, r0
-    svc #0x1
+    svc #0xFF
 
