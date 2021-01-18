@@ -646,7 +646,7 @@ impl NarmVM{
         }
         //B<C> and SVC
         {
-            let op = MASK_C4_IMM8;
+            let op = opcode & !MASK_C4_IMM8;
             //1101_cccc_xxxx_xxxx B<c> T1 (note: if cond == '1110' then UNDEFINED????)
             //1101_1111_xxxx_xxxx SVC T1 (B with condition code 1111)
             if op == 0b1101_0000_0000_0000{
