@@ -9,6 +9,7 @@ Unit test for TST operator - bitwise AND that only set flags and discard result
 
 Included cases (same as for AND): 
 
+- Don't alter target register (Unlike AND)
 - Set Zero flag if result is zero
 - Set Negative flag if result is negative
 
@@ -20,6 +21,17 @@ The reference for these tests are currently official documentations and a QEMU-b
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
+
+// Test that target register is unaltered
+#[test]
+pub fn test_tst_unaltered(){
+    let mut vm = create_test_vm("test_tst_unaltered");
+    vm.execute().unwrap();
+    vm.print_diagnostics();
+    assert_eq!(vm.external_get_reg(0), 0xf);
+    assert!(!vm.cpsr.c);
+    assert!(!vm.cpsr.v);
+}
 
 // Test if TST(0, 0) correctly sets ZERO flag
 #[test]
