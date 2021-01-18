@@ -63,6 +63,23 @@ pub fn asm(input: &str) -> elf::File{
     // The following commands will be executed
     // arm-none-eabi-as -march=armv6s-m -o$OBJECT $INPUT
     // arm-none-eabi-ld -T link.ld -o$OUTPUT $OBJECTF
+// Macro to assert values of all condition flags
+#[macro_export]
+macro_rules! assert_flags_nzcv {
+    (
+        $vm:ident, 
+        $n:expr, 
+        $z:expr, 
+        $c:expr, 
+        $v:expr
+    ) => {
+        assert_eq!($vm.cpsr.n, $n);
+        assert_eq!($vm.cpsr.z, $z);
+        assert_eq!($vm.cpsr.c, $c);
+        assert_eq!($vm.cpsr.v, $v);
+    };
+}
+
 // Macro to assert values of all low registers
 #[macro_export]
 macro_rules! assert_lo_regs_all {
