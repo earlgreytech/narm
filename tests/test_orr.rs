@@ -9,9 +9,13 @@ Unit test for bitwise OR operator
 
 Included cases: 
 
-- Calculate for two register values
+- Calculate correctly for two register values
 - Set Zero flag if result is zero
 - Set Negative flag if result is negative
+
+Checks include in all cases: 
+- Never set Carry or V (signed overflow) flags
+TODO: Check that C or V in never *unset*?
 
 The reference for these tests are currently official documentations and a QEMU-based VM
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
@@ -25,6 +29,8 @@ pub fn test_orr_register(){
     vm.execute().unwrap();
     vm.print_diagnostics();
     assert_eq!(vm.external_get_reg(0), 0xFF);
+    assert!(!vm.cpsr.c);
+    assert!(!vm.cpsr.v);
 }
 
 // Test if OR(0, 0) correctly sets ZERO flag
@@ -34,6 +40,8 @@ pub fn test_orr_flag_zero(){
     vm.execute().unwrap();
     vm.print_diagnostics();
     assert!(vm.cpsr.z);
+    assert!(!vm.cpsr.c);
+    assert!(!vm.cpsr.v);
 }
 
 // Test if OR(1000 ... 0000, 1000 ... 0000) correctly sets NEGATIVE flag
@@ -44,4 +52,6 @@ pub fn test_orr_flag_neg(){
     vm.execute().unwrap();
     vm.print_diagnostics();
     assert!(vm.cpsr.n);
+    assert!(!vm.cpsr.c);
+    assert!(!vm.cpsr.v);
 }
