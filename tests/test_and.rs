@@ -15,6 +15,7 @@ Included cases:
 
 Checks include in all cases: 
 - Never set Carry or V (signed overflow) flags
+- Never alter untargeted low registers
 TODO: Check that C or V in never *unset*?
 
 The reference for these tests are currently official documentations and a QEMU-based VM
@@ -28,7 +29,7 @@ pub fn test_and_register(){
     let mut vm = create_test_vm("test_and_register");
     vm.execute().unwrap();
     vm.print_diagnostics();
-    assert_eq!(vm.external_get_reg(0), 0x0);
+    assert_lo_regs!(vm, 0x0, 0xAA);
     assert!(!vm.cpsr.c);
     assert!(!vm.cpsr.v);
 }
@@ -39,6 +40,7 @@ pub fn test_and_flag_zero(){
     let mut vm = create_test_vm("test_and_flag_zero");
     vm.execute().unwrap();
     vm.print_diagnostics();
+    assert_lo_regs!(vm);
     assert!(vm.cpsr.z);
     assert!(!vm.cpsr.c);
     assert!(!vm.cpsr.v);
@@ -51,6 +53,7 @@ pub fn test_and_flag_neg(){
     let mut vm = create_test_vm("test_and_flag_neg");
     vm.execute().unwrap();
     vm.print_diagnostics();
+    assert_lo_regs!(vm, 0x8000_0000);
     assert!(vm.cpsr.n);
     assert!(!vm.cpsr.c);
     assert!(!vm.cpsr.v);
