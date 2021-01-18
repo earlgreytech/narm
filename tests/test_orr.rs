@@ -21,13 +21,13 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test if OR(1010 1010, 0101 0101) = 1111 1111
+// Test if OR(0000 0101, 1010 1010) = 1010 1111
 #[test]
 pub fn test_orr_register(){
     let mut vm = create_test_vm("test_orr_register");
     vm.execute().unwrap();
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0xFF, 0xAA);
+    assert_lo_regs!(vm, 0xAF, 0xAA);
     assert_flags_nzcv!(vm, false, false, false, false);
 }
 

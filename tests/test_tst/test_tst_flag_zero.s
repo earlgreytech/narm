@@ -3,8 +3,8 @@
 .thumb_func
 _start:
     .globl _start
-    movs r0, #0x5
-    movs r1, #0xa
+    movs r0, #0x55
+    movs r1, #0xAA
     tst r0, r1
     svc #0xFF
 

@@ -21,28 +21,28 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test if AND(1010 1010, 0101 0101) = 0
+// Test if AND(0000 1111, 1010 1010) = 0000 1010
 #[test]
 pub fn test_and_register(){
     let mut vm = create_test_vm("test_and_register");
+    vm.execute().unwrap();
+    vm.print_diagnostics();
+    assert_lo_regs!(vm, 0xA, 0xAA);
+    assert_flags_nzcv!(vm, false, false, false, false);
+}
+
+// Test if AND(0101 0101, 1010 1010) correctly sets Zero flag
+#[test]
+pub fn test_and_flag_zero(){
+    let mut vm = create_test_vm("test_and_flag_zero");
     vm.execute().unwrap();
     vm.print_diagnostics();
     assert_lo_regs!(vm, 0x0, 0xAA);
     assert_flags_nzcv!(vm, false, true, false, false);
 }
 
-// Test if AND(0, 0) correctly sets Zero flag
-#[test]
-pub fn test_and_flag_zero(){
-    let mut vm = create_test_vm("test_and_flag_zero");
-    vm.execute().unwrap();
-    vm.print_diagnostics();
-    assert_lo_regs!(vm);
-    assert_flags_nzcv!(vm, false, true, false, false);
-}
-
 // Test if AND(1000 ... 0000, 1000 ... 0000) correctly sets Negative flag
-// ("highest" bit indicate sign in int representation, so setting it to 1 -> negative number)
+// (Most significant bit indicate sign in 2-complement int representation, so setting it to 1 -> negative number)
 #[test]
 pub fn test_and_flag_neg(){
     let mut vm = create_test_vm("test_and_flag_neg");

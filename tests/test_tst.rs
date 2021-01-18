@@ -21,23 +21,23 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test that target register is unaltered
+// Test if AND(0000 1111, 1010 1010) correctly doesn't alter target registry
 #[test]
 pub fn test_tst_unaltered(){
     let mut vm = create_test_vm("test_tst_unaltered");
     vm.execute().unwrap();
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0xF, 0x1);
+    assert_lo_regs!(vm, 0xFF, 0x0A);
     assert_flags_nzcv!(vm, false, false, false, false);
 }
 
-// Test if TST(0, 0) correctly sets ZERO flag
+// Test if TST(0101 0101, 1010 1010) correctly sets ZERO flag
 #[test]
 pub fn test_tst_flag_zero(){
     let mut vm = create_test_vm("test_tst_flag_zero");
     vm.execute().unwrap();
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0x5, 0xA);
+    assert_lo_regs!(vm, 0x55, 0xAA);
     assert_flags_nzcv!(vm, false, true, false, false);
 }
 
