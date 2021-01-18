@@ -3,6 +3,8 @@ mod common;
 
 use common::*;
 
+// this file is for basic smoke testing of the actual common.rs test functions
+
 #[test]
 pub fn test_cycle(){
     let mut vm = create_vm_from_asm("
