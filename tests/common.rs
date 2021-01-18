@@ -63,6 +63,61 @@ pub fn asm(input: &str) -> elf::File{
     // The following commands will be executed
     // arm-none-eabi-as -march=armv6s-m -o$OBJECT $INPUT
     // arm-none-eabi-ld -T link.ld -o$OUTPUT $OBJECTF
+// Macro to assert values of all low registers
+#[macro_export]
+macro_rules! assert_lo_regs_all {
+    (
+        $vm:ident, 
+        $lo0:expr, 
+        $lo1:expr, 
+        $lo2:expr, 
+        $lo3:expr, 
+        $lo4:expr, 
+        $lo5:expr, 
+        $lo6:expr, 
+        $lo7:expr
+    ) => {
+        assert_eq!($vm.external_get_reg(0), $lo0);
+        assert_eq!($vm.external_get_reg(1), $lo1);
+        assert_eq!($vm.external_get_reg(2), $lo2);
+        assert_eq!($vm.external_get_reg(3), $lo3);
+        assert_eq!($vm.external_get_reg(4), $lo4);
+        assert_eq!($vm.external_get_reg(5), $lo5);
+        assert_eq!($vm.external_get_reg(6), $lo6);
+        assert_eq!($vm.external_get_reg(7), $lo7);
+    };
+}
+
+// Helper macro that allows fever arguments by assuming omitted values as zero
+#[macro_export]
+macro_rules! assert_lo_regs {
+    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr, $lo5:expr, $lo6:expr, $lo7:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, $lo5, $lo6, $lo7) };
+
+    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr, $lo5:expr, $lo6:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, $lo5, $lo6, 0) };
+
+    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr, $lo5:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, $lo5, 0, 0) };
+
+    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, 0, 0, 0) };
+
+    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, 0, 0, 0, 0) };
+
+    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, 0, 0, 0, 0, 0) };
+
+    ($vm:ident, $lo0:expr, $lo1:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, $lo1, 0, 0, 0, 0, 0, 0) };
+
+    ($vm:ident, $lo0:expr) 
+    => { assert_lo_regs_all!($vm, $lo0, 0, 0, 0, 0, 0, 0, 0) };
+
+    ($vm:ident) 
+    => { assert_lo_regs_all!($vm, 0, 0, 0, 0, 0, 0, 0, 0) };
+}
     
     let result = Command::new("arm-none-eabi-as").
         arg("-march=armv6s-m").
