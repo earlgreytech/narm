@@ -13,6 +13,9 @@ Included cases:
 - Set Zero flag if result is zero
 - Set Negative flag if result is negative
 
+The reference for these tests are currently official documentations and a QEMU-based VM
+TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
+
 */
 
 // Test if OR(1010 1010, 0101 0101) = 1111 1111
