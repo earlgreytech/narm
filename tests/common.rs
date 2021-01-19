@@ -158,3 +158,140 @@ macro_rules! assert_lo_regs {
 }
 
 
+
+// Below are structs used to define a VM state that can be checked against test results
+
+
+
+// These two are helper structures
+#[allow(dead_code)]
+pub struct Register {
+    pub assert: bool, 
+    pub value: u32, 
+}
+
+#[allow(dead_code)]
+pub struct CondFlag {
+    pub assert: bool, 
+    pub value: bool, 
+}
+
+// This is the primary structure used 
+// TODO: Handle special registers differently?
+// TODO: Implement memory area assertion? Maybe too advanced?
+#[allow(dead_code)]
+pub struct VmState {
+    pub r0:  Register,
+    pub r1:  Register,
+    pub r2:  Register,
+    pub r3:  Register,
+    pub r4:  Register,
+    pub r5:  Register,
+    pub r6:  Register,
+    pub r7:  Register,
+    pub r8:  Register,
+    pub r9:  Register,
+    pub r10: Register,
+    pub r11: Register,
+    pub r12: Register,
+    pub r13: Register,
+    pub r14: Register,
+    pub r15: Register, // PC
+    pub n:   CondFlag,
+    pub z:   CondFlag,
+    pub c:   CondFlag,
+    pub v:   CondFlag,
+}
+
+// This implementation is used to actually check constructed state against VM state
+#[allow(dead_code)]
+impl VmState {
+    pub fn assert(&self, vm: NarmVM) -> () {
+        let reg_vals = self.reg_val_array();
+        let reg_asserts = self.reg_assert_array();
+        for i in 0..=15 {
+            if reg_asserts[i] {
+                assert_eq!(vm.external_get_reg(i), reg_vals[i]);
+            }
+        }
+        if self.n.assert {
+            assert_eq!(vm.cpsr.n, self.n.value);
+        }
+        if self.z.assert {
+            assert_eq!(vm.cpsr.z, self.z.value);
+        }
+        if self.c.assert {
+            assert_eq!(vm.cpsr.c, self.c.value);
+        }
+        if self.v.assert {
+            assert_eq!(vm.cpsr.v, self.v.value);
+        }
+    }
+
+    fn reg_val_array(&self) -> [u32;16] {
+        [
+            self.r0.value, 
+            self.r1.value, 
+            self.r2.value, 
+            self.r3.value, 
+            self.r4.value, 
+            self.r5.value, 
+            self.r6.value, 
+            self.r7.value, 
+            self.r8.value, 
+            self.r9.value, 
+            self.r10.value, 
+            self.r11.value, 
+            self.r12.value, 
+            self.r13.value, 
+            self.r14.value, 
+            self.r15.value, 
+        ]
+    }
+    fn reg_assert_array(&self) -> [bool;16] {
+        [
+            self.r0.assert, 
+            self.r1.assert, 
+            self.r2.assert, 
+            self.r3.assert, 
+            self.r4.assert, 
+            self.r5.assert, 
+            self.r6.assert, 
+            self.r7.assert, 
+            self.r8.assert, 
+            self.r9.assert, 
+            self.r10.assert, 
+            self.r11.assert, 
+            self.r12.assert, 
+            self.r13.assert, 
+            self.r14.assert, 
+            self.r15.assert, 
+        ]
+    }
+}
+
+// Default values for VmState
+#[allow(dead_code)]
+pub const DEFAULT_VMSTATE: VmState<> = VmState {
+    r0:  Register { assert: true, value: 0, },
+    r1:  Register { assert: true, value: 0, },
+    r2:  Register { assert: true, value: 0, },
+    r3:  Register { assert: true, value: 0, },
+    r4:  Register { assert: true, value: 0, },
+    r5:  Register { assert: true, value: 0, },
+    r6:  Register { assert: true, value: 0, },
+    r7:  Register { assert: true, value: 0, },
+    r8:  Register { assert: true, value: 0, },
+    r9:  Register { assert: true, value: 0, },
+    r10: Register { assert: true, value: 0, },
+    r11: Register { assert: true, value: 0, },
+    r12: Register { assert: true, value: 0, },
+    r13: Register { assert: true, value: 0, },
+    r14: Register { assert: true, value: 0, },
+    r15: Register { assert: false, value: 0, }, // PC
+    n:   CondFlag { assert: true, value: false, },
+    z:   CondFlag { assert: true, value: false, },
+    c:   CondFlag { assert: true, value: false, },
+    v:   CondFlag { assert: true, value: false, },
+};
+
