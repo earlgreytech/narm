@@ -84,214 +84,93 @@ pub fn asm(input: &str) -> elf::File{
     elf::File::open_path(output).unwrap()
 }
 
-// Macro to assert values of all condition flags
-#[macro_export]
-macro_rules! assert_flags_nzcv {
-    (
-        $vm:ident, 
-        $n:expr, 
-        $z:expr, 
-        $c:expr, 
-        $v:expr
-    ) => {
-        assert_eq!($vm.cpsr.n, $n);
-        assert_eq!($vm.cpsr.z, $z);
-        assert_eq!($vm.cpsr.c, $c);
-        assert_eq!($vm.cpsr.v, $v);
-    };
-}
-
-// Macro to assert values of all low registers
-#[macro_export]
-macro_rules! assert_lo_regs_all {
-    (
-        $vm:ident, 
-        $lo0:expr, 
-        $lo1:expr, 
-        $lo2:expr, 
-        $lo3:expr, 
-        $lo4:expr, 
-        $lo5:expr, 
-        $lo6:expr, 
-        $lo7:expr
-    ) => {
-        assert_eq!($vm.external_get_reg(0), $lo0);
-        assert_eq!($vm.external_get_reg(1), $lo1);
-        assert_eq!($vm.external_get_reg(2), $lo2);
-        assert_eq!($vm.external_get_reg(3), $lo3);
-        assert_eq!($vm.external_get_reg(4), $lo4);
-        assert_eq!($vm.external_get_reg(5), $lo5);
-        assert_eq!($vm.external_get_reg(6), $lo6);
-        assert_eq!($vm.external_get_reg(7), $lo7);
-    };
-}
-
-// Helper macro that allows fever arguments by assuming omitted values as zero
-#[macro_export]
-macro_rules! assert_lo_regs {
-    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr, $lo5:expr, $lo6:expr, $lo7:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, $lo5, $lo6, $lo7) };
-
-    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr, $lo5:expr, $lo6:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, $lo5, $lo6, 0) };
-
-    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr, $lo5:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, $lo5, 0, 0) };
-
-    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr, $lo4:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, $lo4, 0, 0, 0) };
-
-    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr, $lo3:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, $lo3, 0, 0, 0, 0) };
-
-    ($vm:ident, $lo0:expr, $lo1:expr, $lo2:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, $lo1, $lo2, 0, 0, 0, 0, 0) };
-
-    ($vm:ident, $lo0:expr, $lo1:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, $lo1, 0, 0, 0, 0, 0, 0) };
-
-    ($vm:ident, $lo0:expr) 
-    => { assert_lo_regs_all!($vm, $lo0, 0, 0, 0, 0, 0, 0, 0) };
-
-    ($vm:ident) 
-    => { assert_lo_regs_all!($vm, 0, 0, 0, 0, 0, 0, 0, 0) };
-}
-
 
 
 // Below are structs used to define a VM state that can be checked against test results
 
 
 
-// These two are helper structures
-#[allow(dead_code)]
-pub struct Register {
-    pub assert: bool, 
-    pub value: u32, 
-}
-
-#[allow(dead_code)]
-pub struct CondFlag {
-    pub assert: bool, 
-    pub value: bool, 
-}
-
-// This is the primary structure used 
 // TODO: Handle special registers differently?
 // TODO: Implement memory area assertion? Maybe too advanced?
 #[allow(dead_code)]
-pub struct VmState {
-    pub r0:  Register,
-    pub r1:  Register,
-    pub r2:  Register,
-    pub r3:  Register,
-    pub r4:  Register,
-    pub r5:  Register,
-    pub r6:  Register,
-    pub r7:  Register,
-    pub r8:  Register,
-    pub r9:  Register,
-    pub r10: Register,
-    pub r11: Register,
-    pub r12: Register,
-    pub r13: Register,
-    pub r14: Register,
-    pub r15: Register, // PC
-    pub n:   CondFlag,
-    pub z:   CondFlag,
-    pub c:   CondFlag,
-    pub v:   CondFlag,
+pub struct VMState {
+    pub r:  [Option<u32>; 15], // Exclude PC for the time being
+    pub n:  Option<bool>,
+    pub z:  Option<bool>,
+    pub c:  Option<bool>,
+    pub v:  Option<bool>,
 }
 
-// This implementation is used to actually check constructed state against VM state
-#[allow(dead_code)]
-impl VmState {
-    pub fn assert(&self, vm: NarmVM) -> () {
-        let reg_vals = self.reg_val_array();
-        let reg_asserts = self.reg_assert_array();
-        for i in 0..=15 {
-            if reg_asserts[i] {
-                assert_eq!(vm.external_get_reg(i), reg_vals[i]);
-            }
+impl Default for VMState {
+    fn default() -> VMState {
+        VMState {
+            r: [
+                Some(0), // r0
+                Some(0), // r1
+                Some(0), // r2
+                Some(0), // r3
+                Some(0), // r4
+                Some(0), // r5
+                Some(0), // r6
+                Some(0), // r7
+                Some(0), // r8
+                Some(0), // r9
+                Some(0), // r10
+                Some(0), // r11
+                Some(0), // r12
+                Some(0), // r13
+                Some(0),  // r14
+            ], 
+            n:  Some(false),
+            z:  Some(false),
+            c:  Some(false),
+            v:  Some(false),
         }
-        if self.n.assert {
-            assert_eq!(vm.cpsr.n, self.n.value);
-        }
-        if self.z.assert {
-            assert_eq!(vm.cpsr.z, self.z.value);
-        }
-        if self.c.assert {
-            assert_eq!(vm.cpsr.c, self.c.value);
-        }
-        if self.v.assert {
-            assert_eq!(vm.cpsr.v, self.v.value);
-        }
-    }
-
-    fn reg_val_array(&self) -> [u32;16] {
-        [
-            self.r0.value, 
-            self.r1.value, 
-            self.r2.value, 
-            self.r3.value, 
-            self.r4.value, 
-            self.r5.value, 
-            self.r6.value, 
-            self.r7.value, 
-            self.r8.value, 
-            self.r9.value, 
-            self.r10.value, 
-            self.r11.value, 
-            self.r12.value, 
-            self.r13.value, 
-            self.r14.value, 
-            self.r15.value, 
-        ]
-    }
-    fn reg_assert_array(&self) -> [bool;16] {
-        [
-            self.r0.assert, 
-            self.r1.assert, 
-            self.r2.assert, 
-            self.r3.assert, 
-            self.r4.assert, 
-            self.r5.assert, 
-            self.r6.assert, 
-            self.r7.assert, 
-            self.r8.assert, 
-            self.r9.assert, 
-            self.r10.assert, 
-            self.r11.assert, 
-            self.r12.assert, 
-            self.r13.assert, 
-            self.r14.assert, 
-            self.r15.assert, 
-        ]
     }
 }
 
-// Default values for VmState
-#[allow(dead_code)]
-pub const DEFAULT_VMSTATE: VmState<> = VmState {
-    r0:  Register { assert: true, value: 0, },
-    r1:  Register { assert: true, value: 0, },
-    r2:  Register { assert: true, value: 0, },
-    r3:  Register { assert: true, value: 0, },
-    r4:  Register { assert: true, value: 0, },
-    r5:  Register { assert: true, value: 0, },
-    r6:  Register { assert: true, value: 0, },
-    r7:  Register { assert: true, value: 0, },
-    r8:  Register { assert: true, value: 0, },
-    r9:  Register { assert: true, value: 0, },
-    r10: Register { assert: true, value: 0, },
-    r11: Register { assert: true, value: 0, },
-    r12: Register { assert: true, value: 0, },
-    r13: Register { assert: true, value: 0, },
-    r14: Register { assert: true, value: 0, },
-    r15: Register { assert: false, value: 0, }, // PC
-    n:   CondFlag { assert: true, value: false, },
-    z:   CondFlag { assert: true, value: false, },
-    c:   CondFlag { assert: true, value: false, },
-    v:   CondFlag { assert: true, value: false, },
-};
+// Format u32 to hex string approperiatly padded with zeroes 
+// TODO: Capital letters?
+// TODO: Underscores separating bytes?
+pub fn format_padded_hex(int: u32) -> String{
+    let mut string = String::from(format!("{:x}", int));
+    while string.len() < 8 {
+        string = format!("0{}", string)
+    }
+    string
+}
 
+// Macro to assert values in VMState struct against the actual VM's state
+// This could be done as a function, but that would bloat a stack trace compared to an inlined macro. 
+#[macro_export]
+macro_rules! assert_vm_eq {
+    ( $vmstate:ident, $vm:ident ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($vmstate.r[i]) {
+                Some(x) => assert_eq!(x, $vm.external_get_reg(i), "\n\nRegister r{}: Expected 0x{}, actually contained 0x{}\n\n", i, format_padded_hex(x), format_padded_hex($vm.external_get_reg(i))),
+                None    => (),
+            };
+        }
+        // Negative flag
+        match ($vmstate.n) {
+            Some(x) => assert_eq!(x, $vm.cpsr.n, "\n\nCondition flag n (Negative): Expected {}, actually contained {}\n\n", x, $vm.cpsr.n),
+            None    => (),
+        };
+        // Zero flag
+        match ($vmstate.z) {
+            Some(x) => assert_eq!(x, $vm.cpsr.z, "\n\nCondition flag z (Zero): Expected {}, actually contained {}\n\n", x, $vm.cpsr.z),
+            None    => (),
+        };
+        // Carry (Overflow) flag
+        match ($vmstate.c) {
+            Some(x) => assert_eq!(x, $vm.cpsr.c, "\n\nCondition flag c (Carry/Unsigned Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.c),
+            None    => (),
+        };
+        // V (Signed Overflow) flag
+        match ($vmstate.v) {
+            Some(x) => assert_eq!(x, $vm.cpsr.v, "\n\nCondition flag v (Signed Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.v),
+            None    => (),
+        };
+    };
+}
