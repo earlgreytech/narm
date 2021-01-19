@@ -32,8 +32,12 @@ pub fn test_tst_unaltered(){
     ");
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0xFF, 0x0A);
-    assert_flags_nzcv!(vm, false, false, false, false);
+    
+    VmState {
+        r0: Register{ assert: true, value: 0xFF },
+        r1: Register{ assert: true, value: 0x0A },
+        .. DEFAULT_VMSTATE
+    }.assert(vm);
 }
 
 // Test if TST(0101 0101, 1010 1010) correctly sets ZERO flag
@@ -47,8 +51,13 @@ pub fn test_tst_flag_zero(){
     ");
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0x55, 0xAA);
-    assert_flags_nzcv!(vm, false, true, false, false);
+    
+    VmState {
+        r0: Register{ assert: true, value: 0x55 },
+        r1: Register{ assert: true, value: 0xAA },
+        z:  CondFlag{ assert: true, value: true },
+        .. DEFAULT_VMSTATE
+    }.assert(vm);
 }
 
 // Test if TST(1000 ... 0000, 1000 ... 0000) correctly sets NEGATIVE flag
@@ -64,6 +73,10 @@ pub fn test_tst_flag_neg(){
     ");
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0x8000_0000);
-    assert_flags_nzcv!(vm, true, false, false, false);
+    
+    VmState {
+        r0: Register{ assert: true, value: 0x8000_0000 },
+        n:  CondFlag{ assert: true, value: true },
+        .. DEFAULT_VMSTATE
+    }.assert(vm);
 }

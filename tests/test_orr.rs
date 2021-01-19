@@ -32,8 +32,12 @@ pub fn test_orr_register(){
     ");
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0xAF, 0xAA);
-    assert_flags_nzcv!(vm, false, false, false, false);
+    
+    VmState {
+        r0: Register{ assert: true, value: 0xAF },
+        r1: Register{ assert: true, value: 0xAA },
+        .. DEFAULT_VMSTATE
+    }.assert(vm);
 }
 
 // Test if OR(0, 0) correctly sets ZERO flag
@@ -45,8 +49,11 @@ pub fn test_orr_flag_zero(){
     ");
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    assert_lo_regs!(vm);
-    assert_flags_nzcv!(vm, false, true, false, false);
+    
+    VmState {
+        z:  CondFlag{ assert: true, value: true },
+        .. DEFAULT_VMSTATE
+    }.assert(vm);
 }
 
 // Test if OR(1000 ... 0000, 1000 ... 0000) correctly sets NEGATIVE flag
@@ -62,6 +69,10 @@ pub fn test_orr_flag_neg(){
     ");
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    assert_lo_regs!(vm, 0x8000_0000);
-    assert_flags_nzcv!(vm, true, false, false, false);
+    
+    VmState {
+        r0: Register{ assert: true, value: 0x8000_0000 },
+        n:  CondFlag{ assert: true, value: true },
+        .. DEFAULT_VMSTATE
+    }.assert(vm);
 }
