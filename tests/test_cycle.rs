@@ -23,9 +23,9 @@ pub fn test_cycle(){
 pub fn test_execute(){
     let mut vm = create_vm_from_asm("
         movs r0, #0x00_00_00_F1
-        svc #0xFF
+        svc #0x00_00_00_FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     

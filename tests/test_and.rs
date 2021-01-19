@@ -21,16 +21,16 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test if AND(0000 1111, 1010 1010) = 0000 1010
+// Test if AND(... 0000 1111, ... 1010 1010) = ... 0000 1010
 #[test]
 pub fn test_and_register(){
     let mut vm = create_vm_from_asm("
         movs r0, #0x00_00_00_0F
         movs r1, #0x00_00_00_AA
         ands r0, r1
-        svc #0xFF
+        svc #0x00_00_00_FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
@@ -40,16 +40,16 @@ pub fn test_and_register(){
     assert_vm_eq!(vm_expected, vm);
 }
 
-// Test if AND(0101 0101, 1010 1010) correctly sets Zero flag
+// Test if AND(... 0101 0101, ... 1010 1010) correctly sets Zero flag
 #[test]
 pub fn test_and_flag_zero(){
     let mut vm = create_vm_from_asm("
         movs r0, #0x00_00_00_55
         movs r1, #0x00_00_00_AA
         ands r0, r1
-        svc #0xFF
+        svc #0x00_00_00_FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
@@ -69,9 +69,9 @@ pub fn test_and_flag_neg(){
         lsls r0, #0x00_00_00_0F
         lsls r0, #0x00_00_00_0F
         ands r0, r0
-        svc #0xFF
+        svc #0x00_00_00_FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     

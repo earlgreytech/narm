@@ -21,16 +21,16 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test if OR(0000 0101, 1010 1010) = 1010 1111
+// Test if OR(... 0000 0101, ... 1010 1010) = ... 1010 1111
 #[test]
 pub fn test_orr_register(){
     let mut vm = create_vm_from_asm("
         movs r0, #0x00_00_00_05
         movs r1, #0x00_00_00_AA
         orrs r0, r1
-        svc #0xFF
+        svc #0x00_00_00_FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
@@ -40,14 +40,14 @@ pub fn test_orr_register(){
     assert_vm_eq!(vm_expected, vm);
 }
 
-// Test if OR(0, 0) correctly sets ZERO flag
+// Test if OR(... 0000, ... 0000) correctly sets ZERO flag
 #[test]
 pub fn test_orr_flag_zero(){
     let mut vm = create_vm_from_asm("
         orrs r0, r1
-        svc #0xFF
+        svc #0x00_00_00_FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
@@ -65,9 +65,9 @@ pub fn test_orr_flag_neg(){
         lsls r0, #0x00_00_00_0F
         lsls r0, #0x00_00_00_0F
         orrs r0, r0
-        svc #0xFF
+        svc #0x00_00_00_FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
