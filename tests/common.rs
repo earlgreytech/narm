@@ -86,7 +86,28 @@ pub fn asm(input: &str) -> elf::File{
 
 
 
-// Below are structs used to define a VM state that can be checked against test results
+/*
+
+--- VM state assertion infrastructure ---
+
+The VMState structure contains expected values for each registry and flag exposed by the VM
+By default everything is checked and expected to be 0/false, but tests can be altered or turned off individually
+
+Basic test format: 
+
+    let mut vm = ... 
+    
+    ...
+    
+    let mut vm_expected: VMState = Default::default(); <- Default is check all, 0 for regs and false (ie unset/0) for flags
+    
+    vm_expected.r[0] = Some(0x00_00_00_AF); <- r0 should be this value
+    vm_expected.c = Some(true);             <- Carry flag should be true (ie set/1)
+    vm_expected.r[1] = None;                <- r1 won't be checked, any value will pass the test
+    
+    assert_vm_eq!(vm_expected, vm);         <- Actually do the asserts
+
+*/
 
 
 
