@@ -84,3 +84,114 @@ pub fn asm(input: &str) -> elf::File{
     elf::File::open_path(output).unwrap()
 }
 
+
+
+/*
+
+--- VM state assertion infrastructure ---
+
+The VMState structure contains expected values for each registry and flag exposed by the VM
+By default everything is checked and expected to be 0/false, but tests can be altered or turned off individually
+
+Basic test format: 
+
+    let mut vm = ... 
+    
+    ...
+    
+    let mut vm_expected: VMState = Default::default(); <- Default is check all, 0 for regs and false (ie unset/0) for flags
+    
+    vm_expected.r[0] = Some(0x00_00_00_AF); <- r0 should be this value
+    vm_expected.c = Some(true);             <- Carry flag should be true (ie set/1)
+    vm_expected.r[1] = None;                <- r1 won't be checked, any value will pass the test
+    
+    assert_vm_eq!(vm_expected, vm);         <- Actually do the asserts
+
+*/
+
+
+
+// TODO: Handle special registers differently?
+// TODO: Implement memory area assertion? Maybe too advanced?
+#[allow(dead_code)]
+pub struct VMState {
+    pub r:  [Option<u32>; 15], // Exclude PC for the time being
+    pub n:  Option<bool>,
+    pub z:  Option<bool>,
+    pub c:  Option<bool>,
+    pub v:  Option<bool>,
+}
+
+impl Default for VMState {
+    fn default() -> VMState {
+        VMState {
+            r: [
+                Some(0), // r0
+                Some(0), // r1
+                Some(0), // r2
+                Some(0), // r3
+                Some(0), // r4
+                Some(0), // r5
+                Some(0), // r6
+                Some(0), // r7
+                Some(0), // r8
+                Some(0), // r9
+                Some(0), // r10
+                Some(0), // r11
+                Some(0), // r12
+                Some(0), // r13
+                Some(0),  // r14
+            ], 
+            n:  Some(false),
+            z:  Some(false),
+            c:  Some(false),
+            v:  Some(false),
+        }
+    }
+}
+
+// Format u32 to hex string approperiatly padded with zeroes 
+// TODO: Capital letters?
+// TODO: Underscores separating bytes?
+pub fn format_padded_hex(int: u32) -> String{
+    let mut string = String::from(format!("{:x}", int));
+    while string.len() < 8 {
+        string = format!("0{}", string)
+    }
+    string
+}
+
+// Macro to assert values in VMState struct against the actual VM's state
+// This could be done as a function, but that would bloat a stack trace compared to an inlined macro. 
+#[macro_export]
+macro_rules! assert_vm_eq {
+    ( $vmstate:ident, $vm:ident ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($vmstate.r[i]) {
+                Some(x) => assert_eq!(x, $vm.external_get_reg(i), "\n\nRegister r{}: Expected 0x{}, actually contained 0x{}\n\n", i, format_padded_hex(x), format_padded_hex($vm.external_get_reg(i))),
+                None    => (),
+            };
+        }
+        // Negative flag
+        match ($vmstate.n) {
+            Some(x) => assert_eq!(x, $vm.cpsr.n, "\n\nCondition flag n (Negative): Expected {}, actually contained {}\n\n", x, $vm.cpsr.n),
+            None    => (),
+        };
+        // Zero flag
+        match ($vmstate.z) {
+            Some(x) => assert_eq!(x, $vm.cpsr.z, "\n\nCondition flag z (Zero): Expected {}, actually contained {}\n\n", x, $vm.cpsr.z),
+            None    => (),
+        };
+        // Carry (Overflow) flag
+        match ($vmstate.c) {
+            Some(x) => assert_eq!(x, $vm.cpsr.c, "\n\nCondition flag c (Carry/Unsigned Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.c),
+            None    => (),
+        };
+        // V (Signed Overflow) flag
+        match ($vmstate.v) {
+            Some(x) => assert_eq!(x, $vm.cpsr.v, "\n\nCondition flag v (Signed Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.v),
+            None    => (),
+        };
+    };
+}
