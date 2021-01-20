@@ -25,10 +25,10 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 #[test]
 pub fn test_orr_register(){
     let mut vm = create_vm_from_asm("
-        movs r0, #0x00000005
-        movs r1, #0x000000AA
+        movs r0,            #0x00000005
+        movs r1,            #0x000000AA
         orrs r0, r1
-        svc #0x000000FF
+        svc                 #0x000000FF
     ");
     assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
     vm.print_diagnostics();
@@ -45,7 +45,7 @@ pub fn test_orr_register(){
 pub fn test_orr_flag_zero(){
     let mut vm = create_vm_from_asm("
         orrs r0, r1
-        svc #0x000000FF
+        svc                 #0x000000FF
     ");
     assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
     vm.print_diagnostics();
@@ -61,11 +61,11 @@ pub fn test_orr_flag_zero(){
 #[test]
 pub fn test_orr_flag_neg(){
     let mut vm = create_vm_from_asm("
-        movs r0, #0x00000002
-        lsls r0, #0x0000000F
-        lsls r0, #0x0000000F
+        movs r0,            #0x00000002
+        lsls r0,            #0x0000000F
+        lsls r0,            #0x0000000F
         orrs r0, r0
-        svc #0x000000FF
+        svc                 #0x000000FF
     ");
     assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
     vm.print_diagnostics();
