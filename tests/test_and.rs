@@ -13,7 +13,7 @@ Included cases:
 - Set Zero flag if result is zero
 - Set Negative flag if result is negative
 
-All tests also check for unexpected changes in untargeted lo registers and condition flags
+All tests also check for unexpected changes in registers and condition flags
 TODO: Add tests where untargeted values are pre-set and check if incorrectly reset?
 
 The reference for these tests is currently official documentations and a QEMU-based VM
@@ -21,7 +21,7 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test if AND(... 0000 1111, ... 1010 1010) = ... 0000 1010
+// Test if operation calculate correctly for two register values
 #[test]
 pub fn test_and_register(){
     let mut vm = create_vm_from_asm("
@@ -40,7 +40,7 @@ pub fn test_and_register(){
     assert_vm_eq!(vm_expected, vm);
 }
 
-// Test if AND(... 0101 0101, ... 1010 1010) correctly sets Zero flag
+// Test if operation set Zero flag if result is zero
 #[test]
 pub fn test_and_flag_zero(){
     let mut vm = create_vm_from_asm("
@@ -60,7 +60,7 @@ pub fn test_and_flag_zero(){
     assert_vm_eq!(vm_expected, vm);
 }
 
-// Test if AND(1000 ... 0000, 1000 ... 0000) correctly sets Negative flag
+// Test if operation set Negative flag if result is negative
 // (Most significant bit indicate sign in 2-complement int representation, so setting it to 1 -> negative number)
 #[test]
 pub fn test_and_flag_neg(){

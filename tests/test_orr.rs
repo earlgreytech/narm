@@ -13,7 +13,7 @@ Included cases:
 - Set Zero flag if result is zero
 - Set Negative flag if result is negative
 
-All tests also check for unexpected changes in untargeted lo registers and condition flags
+All tests also check for unexpected changes in registers and condition flags
 TODO: Add tests where untargeted values are pre-set and check if incorrectly reset?
 
 The reference for these tests is currently official documentations and a QEMU-based VM
@@ -21,7 +21,7 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test if OR(... 0000 0101, ... 1010 1010) = ... 1010 1111
+// Test if operation calculate correctly for two register values
 #[test]
 pub fn test_orr_register(){
     let mut vm = create_vm_from_asm("
@@ -40,7 +40,7 @@ pub fn test_orr_register(){
     assert_vm_eq!(vm_expected, vm);
 }
 
-// Test if OR(... 0000, ... 0000) correctly sets ZERO flag
+// Test if operation set Zero flag if result is zero
 #[test]
 pub fn test_orr_flag_zero(){
     let mut vm = create_vm_from_asm("
@@ -56,7 +56,7 @@ pub fn test_orr_flag_zero(){
     assert_vm_eq!(vm_expected, vm);
 }
 
-// Test if OR(1000 ... 0000, 1000 ... 0000) correctly sets NEGATIVE flag
+// Test if operation set Negative flag if result is negative
 // ("highest" bit indicate sign in int representation, so setting it to 1 -> negative number)
 #[test]
 pub fn test_orr_flag_neg(){
