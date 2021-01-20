@@ -25,17 +25,17 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 #[test]
 pub fn test_orr_register(){
     let mut vm = create_vm_from_asm("
-        movs r0, #0x00_00_00_05
-        movs r1, #0x00_00_00_AA
+        movs r0, #0x00000005
+        movs r1, #0x000000AA
         orrs r0, r1
-        svc #0x00_00_00_FF
+        svc #0x000000FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
+    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
-    vm_expected.r[0] = Some(0x00_00_00_AF);
-    vm_expected.r[1] = Some(0x00_00_00_AA);
+    vm_expected.r[0] = Some(0x0000_00AF);
+    vm_expected.r[1] = Some(0x0000_00AA);
     
     assert_vm_eq!(vm_expected, vm);
 }
@@ -45,9 +45,9 @@ pub fn test_orr_register(){
 pub fn test_orr_flag_zero(){
     let mut vm = create_vm_from_asm("
         orrs r0, r1
-        svc #0x00_00_00_FF
+        svc #0x000000FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
+    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
@@ -61,17 +61,17 @@ pub fn test_orr_flag_zero(){
 #[test]
 pub fn test_orr_flag_neg(){
     let mut vm = create_vm_from_asm("
-        movs r0, #0x00_00_00_02
-        lsls r0, #0x00_00_00_0F
-        lsls r0, #0x00_00_00_0F
+        movs r0, #0x00000002
+        lsls r0, #0x0000000F
+        lsls r0, #0x0000000F
         orrs r0, r0
-        svc #0x00_00_00_FF
+        svc #0x000000FF
     ");
-    assert_eq!(vm.execute().unwrap(), 0x00_00_00_FF);
+    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
-    vm_expected.r[0] = Some(0x80_00_00_00);
+    vm_expected.r[0] = Some(0x8000_0000);
     vm_expected.n = Some(true);
     
     assert_vm_eq!(vm_expected, vm);
