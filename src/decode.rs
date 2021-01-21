@@ -41,8 +41,8 @@ pub fn decode_r3_r3_r3(opcode: u16) -> (usize, usize, usize){
     )
 }
 pub fn decode_n1_r4_rn3(opcode: u16) -> (LongRegister, LongRegister){
-    let n =     opcode & 0b0000_0000_1000_0000 >> 7;
-    let r4 =    opcode & 0b0000_0000_0111_1000 >> 3;
+    let n =     (opcode & 0b0000_0000_1000_0000) >> 7;
+    let r4 =    (opcode & 0b0000_0000_0111_1000) >> 3;
     let r3 =    opcode & 0b0000_0000_0000_0111;
     let rn3 = (n << 3) | r3;
     (
