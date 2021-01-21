@@ -552,6 +552,24 @@ impl NarmVM{
                     }
                     return Ok(0);
                 },
+                //0100_0110_xyyy_yzzz MOV reg T1(???) noflags (This op allows moving data to/from/between high regs)
+                0b0100_0110_0000_0000 => {
+                    
+                    if reg1.register == 15 && reg2.register == 15 {
+                        // "Use of r15 as a source register is deprecated when r15 is the destination register"
+                    }
+                    else if reg1.register == 15 {
+                        self.set_reg(&reg2, self.get_reg(&reg1)); // Dest get value of PC with last 2 bits zeroed, is that correct?
+                    }
+                    else if reg2.register == 15 {
+                        // TODO: Enable MOV to PC once it has been confirmed working
+                    }
+                    else {
+                        self.set_reg(&reg2, self.get_reg(&reg1));
+                    }
+  
+                    return Ok(0);
+                },
                 _ => {}
             }
         }
