@@ -4,7 +4,7 @@ mod common;
 use common::*;
 
 #[test]
-pub fn test_add_lo_high_register(){
+pub fn test_mov_lo_high_register(){
     let mut vm = create_vm_from_asm("
         movs r0,            #0x0000000A
         mov r8, r0
