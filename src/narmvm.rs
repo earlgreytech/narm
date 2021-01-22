@@ -858,7 +858,7 @@ impl NarmVM{
         0
     }
     pub fn print_diagnostics(&self){
-        for i in 0..15{
+        for i in 0..=15{
             println!("r{}: {:#010x}", i, self.external_get_reg(i));
         }
         println!("z: {}", self.cpsr.z);
