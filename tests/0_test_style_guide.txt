@@ -19,7 +19,7 @@ Each distinct test case should have its own function named "test_[op mnemonic]_[
 Not formalized as of now, go for best effort emulation of existing files. See e.g. "test_and.rs". 
 
     - Number formatting:
-Constants should normally be written in hexadecimal, with an even number of characters (e.g. 0x01 and 0x0100, not 0x1 and 0x100), and in Rust sections an underscore should separate every 4 characters (0x1234_5678). A very important note here is that while it's possible in some cases to use underscores to format Assembly constants this is an unintended behavior and shouldn't be used. 
+Constants should normally be written in upper-case hexadecimal, with an even number of characters (e.g. 0x01 and 0x0100, not 0x1 and 0x100), and in Rust sections an underscore should separate every 4 characters (0x1234_5678). A very important note here is that while it's possible in some cases to use underscores to format Assembly constants this is an unintended behavior and shouldn't be used. 
 
     - General Rust code style: 
 The code should be formatted using the built-in "rustfmt" command (run "rustfmt *.rs" in this directory). At some point configurations should probably be made, but for now default is acceptable. 
