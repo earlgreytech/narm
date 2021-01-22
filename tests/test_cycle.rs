@@ -8,13 +8,13 @@ use common::*;
 #[test]
 pub fn test_cycle(){
     let mut vm = create_vm_from_asm("
-        movs r0,            #0x000000F1
+        movs r0,            #0xF1
     ");
     vm.cycle().unwrap();
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
-    vm_expected.r[0] = Some(0x0000_00F1);
+    vm_expected.r[0] = Some(0xF1);
     
     assert_vm_eq!(vm_expected, vm);
 }
@@ -22,14 +22,14 @@ pub fn test_cycle(){
 #[test]
 pub fn test_execute(){
     let mut vm = create_vm_from_asm("
-        movs r0,            #0x000000F1
-        svc                 #0x000000FF
+        movs r0,            #0xF1
+        svc                 #0xFF
     ");
-    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
+    assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
-    vm_expected.r[0] = Some(0x0000_00F1);
+    vm_expected.r[0] = Some(0xF1);
     
     assert_vm_eq!(vm_expected, vm);
 }

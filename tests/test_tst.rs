@@ -25,17 +25,17 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 #[test]
 pub fn test_tst_unaltered(){
     let mut vm = create_vm_from_asm("
-        movs r0,            #0x000000FF
-        movs r1,            #0x0000000A
+        movs r0,            #0xFF
+        movs r1,            #0x0A
         tst r0, r1
-        svc                 #0x000000FF
+        svc                 #0xFF
     ");
-    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
+    assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
-    vm_expected.r[0] = Some(0x0000_00FF);
-    vm_expected.r[1] = Some(0x0000_000A);
+    vm_expected.r[0] = Some(0xFF);
+    vm_expected.r[1] = Some(0x0A);
     
     assert_vm_eq!(vm_expected, vm);
 }
@@ -44,17 +44,17 @@ pub fn test_tst_unaltered(){
 #[test]
 pub fn test_tst_flag_zero(){
     let mut vm = create_vm_from_asm("
-        movs r0,            #0x00000055
-        movs r1,            #0x000000AA
+        movs r0,            #0x55
+        movs r1,            #0xAA
         tst r0, r1
-        svc                 #0x000000FF
+        svc                 #0xFF
     ");
-    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
+    assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
-    vm_expected.r[0] = Some(0x0000_0055);
-    vm_expected.r[1] = Some(0x0000_00AA);
+    vm_expected.r[0] = Some(0x55);
+    vm_expected.r[1] = Some(0xAA);
     vm_expected.z = Some(true);
     
     assert_vm_eq!(vm_expected, vm);
@@ -65,13 +65,13 @@ pub fn test_tst_flag_zero(){
 #[test]
 pub fn test_tst_flag_neg(){
     let mut vm = create_vm_from_asm("
-        movs r0,            #0x00000002
-        lsls r0,            #0x0000000F
-        lsls r0,            #0x0000000F
+        movs r0,            #0x08
+        lsls r0,            #0x0E
+        lsls r0,            #0x0E
         tst r0, r0
-        svc                 #0x000000FF
+        svc                 #0xFF
     ");
-    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
+    assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
     let mut vm_expected: VMState = Default::default();
     
