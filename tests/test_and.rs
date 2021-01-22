@@ -14,7 +14,6 @@ Included cases:
 - Set Negative flag if result is negative
 
 All tests also check for unexpected changes in registers and condition flags
-TODO: Add tests where untargeted values are pre-set and check if incorrectly reset?
 
 The reference for these tests is currently official documentations and a QEMU-based VM
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?

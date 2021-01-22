@@ -9,13 +9,13 @@ pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     let file = asm(assembly_code);
 
     let text_scn = file.get_section(".text").unwrap();
-    assert!(text_scn.shdr.addr == 0x1_0000);
-    assert!(text_scn.data.len() < 0x1_0000);
+    assert!(text_scn.shdr.addr == 0x01_0000);
+    assert!(text_scn.data.len() < 0x01_0000);
 
     let mut vm = NarmVM::default();
-    vm.memory.add_memory(0x1_0000, 0x1_0000).unwrap();
-    vm.copy_into_memory(0x1_0000, &text_scn.data).unwrap();
-    vm.set_pc(0x1_0000);
+    vm.memory.add_memory(0x01_0000, 0x01_0000).unwrap();
+    vm.copy_into_memory(0x01_0000, &text_scn.data).unwrap();
+    vm.set_pc(0x01_0000);
     vm.gas_remaining = DEFAULT_GAS;
     vm
 }
@@ -41,7 +41,7 @@ pub fn asm(input: &str) -> elf::File {
     ENTRY (_start)
     SECTIONS
     {
-        . = 0x10000;
+        . = 0x010000;
         .text : { *(.text*) *(.rodata*) }
         .data : { *(.data*) }
         /*.bss : { *(.bss*) *(COMMON*) }*/
@@ -115,7 +115,7 @@ Basic test format:
 
     let mut vm_expected: VMState = Default::default(); <- Default is check all, 0 for regs and false (ie unset/0) for flags
 
-    vm_expected.r[0] = Some(0x00_00_00_AF); <- r0 should be this value
+    vm_expected.r[0] = Some(0xAF); <- r0 should be this value
     vm_expected.c = Some(true);             <- Carry flag should be true (ie set/1)
     vm_expected.r[1] = None;                <- r1 won't be checked, any value will pass the test
 
@@ -162,18 +162,18 @@ impl Default for VMState {
     }
 }
 
-// Format u32 to hex string approperiatly padded with zeroes
-// TODO: Capital letters?
-// TODO: Underscores separating bytes?
+// Format u32 to hex string approperiatly padded with zeroes for easy side-by-side comparison
+// TODO: Underscores?
 pub fn format_padded_hex(int: u32) -> String {
     let mut string = String::from(format!("{:x}", int));
     while string.len() < 8 {
         string = format!("0{}", string)
     }
-    string
+    string.to_uppercase()
 }
 
 // Macro to assert values in VMState struct against the actual VM's state
+// Includes a custom error message that formats register values to padded hex strings in addition to the default decimal print
 // This could be done as a function, but that would bloat a stack trace compared to an inlined macro.
 #[macro_export]
 macro_rules! assert_vm_eq {
