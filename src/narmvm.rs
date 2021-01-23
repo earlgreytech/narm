@@ -552,17 +552,23 @@ impl NarmVM{
                     }
                     return Ok(0);
                 },
-                //0100_0110_xyyy_yzzz MOV reg T1(???) noflags (This op allows moving data to/from/between high regs)
+                //0100_0110_xyyy_yzzz MOV reg T1 noflags
                 0b0100_0110_0000_0000 => {
                     
-                    if reg1.register == 15 && reg2.register == 15 {
-                        // "Use of r15 as a source register is deprecated when r15 is the destination register"
+                    if 
+                        (reg1.register == 15 || reg1.register == 13) && 
+                        (reg2.register == 15 || reg2.register == 13) 
+                    {
+                        // "ARM deprecates the use of the following MOV (register) instructions in which <Rd> is the SP or PC and <Rm> is also the SP or PC"
+                        // Meaning, if both registers are either the SP or the PC it's no good
+                        // Probably shouldn't be an error since it still compiles?
                     }
                     else if reg1.register == 15 {
-                        self.set_reg(&reg2, self.get_reg(&reg1)); // Dest get value of PC with last 2 bits zeroed, is that correct?
+                        self.set_reg(&reg2, self.get_last_pc());
                     }
                     else if reg2.register == 15 {
-                        // TODO: Enable MOV to PC once it has been confirmed working
+                        // The least significant bit is used for determining instruction execution state. For our application it's always 0. 
+                        self.set_pc(self.get_reg(&reg1) & 0b11111111111111111111111111111110);
                     }
                     else {
                         self.set_reg(&reg2, self.get_reg(&reg1));
