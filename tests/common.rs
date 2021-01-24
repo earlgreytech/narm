@@ -214,3 +214,38 @@ macro_rules! assert_vm_eq {
         };
     };
 }
+
+// Macro to load values in VMState struct into the actual VM's state
+// This could be done as a function, but I made the assertion thing above a macro and now it's too late
+#[macro_export]
+macro_rules! load_into_vm {
+    ( $vmstate:ident, $vm:ident ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($vmstate.r[i]) {
+                Some(x) => $vm.external_set_reg(i, x),
+                None    => (),
+            };
+        }
+        // Negative flag
+        match ($vmstate.n) {
+            Some(x) => $vm.cpsr.n = x,
+            None    => (),
+        };
+        // Zero flag
+        match ($vmstate.z) {
+            Some(x) => $vm.cpsr.z = x,
+            None    => (),
+        };
+        // Carry (Overflow) flag
+        match ($vmstate.c) {
+            Some(x) => $vm.cpsr.c = x,
+            None    => (),
+        };
+        // V (Signed Overflow) flag
+        match ($vmstate.v) {
+            Some(x) => $vm.cpsr.v = x,
+            None    => (),
+        };
+    };
+}
