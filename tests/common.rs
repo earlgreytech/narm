@@ -15,7 +15,7 @@ pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     let mut vm = NarmVM::default();
     vm.memory.add_memory(0x01_0000, 0x01_0000).unwrap();
     vm.copy_into_memory(0x01_0000, &text_scn.data).unwrap();
-    vm.set_pc(0x01_0000);
+    vm.set_thumb_pc_address(0x01_0000);
     vm.gas_remaining = DEFAULT_GAS;
     vm
 }
@@ -132,6 +132,7 @@ pub struct VMState {
     pub z: Option<bool>,
     pub c: Option<bool>,
     pub v: Option<bool>,
+    pub pc_address: Option<u32>,
 }
 
 impl Default for VMState {
@@ -158,6 +159,7 @@ impl Default for VMState {
             z: Some(false),
             c: Some(false),
             v: Some(false),
+            pc_address: None, //ignore pc normally
         }
     }
 }
@@ -203,6 +205,11 @@ macro_rules! assert_vm_eq {
         // V (Signed Overflow) flag
         match ($vmstate.v) {
             Some(x) => assert_eq!(x, $vm.cpsr.v, "\n\nCondition flag v (Signed Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.v),
+            None    => (),
+        };
+        // PC, program counter
+        match ($vmstate.pc_address) {
+            Some(x) => assert_eq!(x, $vm.get_pc_address(), "\n\npc: Expected {}, actually contained {}\n\n", x, $vm.get_pc_address()),
             None    => (),
         };
     };
