@@ -552,6 +552,30 @@ impl NarmVM{
                     }
                     return Ok(0);
                 },
+                //0100_0110_xyyy_yzzz MOV reg T1 noflags
+                0b0100_0110_0000_0000 => {
+                    
+                    if 
+                        (reg1.register == 15 || reg1.register == 13) && 
+                        (reg2.register == 15 || reg2.register == 13) 
+                    {
+                        // "ARM deprecates the use of the following MOV (register) instructions in which <Rd> is the SP or PC and <Rm> is also the SP or PC"
+                        // Meaning, if both registers are either the SP or the PC it's no good
+                        // Probably shouldn't be an error since it still compiles?
+                    }
+                    else if reg1.register == 15 {
+                        self.set_reg(&reg2, self.get_last_pc());
+                    }
+                    else if reg2.register == 15 {
+                        // The least significant bit is used for determining instruction execution state. For our application it's always 0. 
+                        self.set_pc(self.get_reg(&reg1) & 0b11111111111111111111111111111110);
+                    }
+                    else {
+                        self.set_reg(&reg2, self.get_reg(&reg1));
+                    }
+  
+                    return Ok(0);
+                },
                 _ => {}
             }
         }
@@ -840,7 +864,7 @@ impl NarmVM{
         0
     }
     pub fn print_diagnostics(&self){
-        for i in 0..15{
+        for i in 0..=15{
             println!("r{}: {:#010x}", i, self.external_get_reg(i));
         }
         println!("z: {}", self.cpsr.z);
