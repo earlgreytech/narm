@@ -132,7 +132,7 @@ pub struct VMState {
     pub z: Option<bool>,
     pub c: Option<bool>,
     pub v: Option<bool>,
-    pub pc_address: Option<u32>
+    pub pc_address: Option<u32>,
 }
 
 impl Default for VMState {
@@ -159,7 +159,7 @@ impl Default for VMState {
             z: Some(false),
             c: Some(false),
             v: Some(false),
-            pc_address: None //ignore pc normally
+            pc_address: None, //ignore pc normally
         }
     }
 }

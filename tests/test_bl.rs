@@ -3,7 +3,6 @@ mod common;
 
 use common::*;
 
-
 //this will test small nearby jumps using bl
 #[test]
 pub fn test_bl_small_jump() {
