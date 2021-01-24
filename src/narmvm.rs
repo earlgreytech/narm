@@ -79,11 +79,11 @@ impl NarmVM{
             
             let opcode32 = ((opcode as u32) << 16) | (self.memory.get_u16(self.pc)? as u32);
             self.pc += 2;
-            let opcode32 = opcode32 & !MASK32_X1_IMM10_X1_X1_IMM11;
+            let op32 = opcode32 & !MASK32_X1_IMM10_X1_X1_IMM11;
             let (s, imm1, j1, j2, imm2) = decode32_x1_imm10_x1_x1_imm11(opcode32);
             //BL T1, 32bit instruction. J is split into J1 and J2. x, y, and z is combined into one argument using all of the arguments together which control sign extension etc. Allows -16777216 to +16777214
                            //1111_0xyy_yyyy_yyyy_11J1_Jzzz_zzzz_zzzz 
-            if opcode32 == 0b1111_0000_0000_0000_1101_0000_0000_0000{
+            if op32 == 0b1111_0000_0000_0000_1101_0000_0000_0000{
                 //I1 = NOT(J1 EOR S);  I2 = NOT(J2 EOR S);  imm32 = SignExtend(S:I1:I2:imm10:imm11:'0', 32);
                 let s1 = s as u32;
                 let i1 = (!(j1 ^ s)) as u32;
@@ -136,7 +136,7 @@ impl NarmVM{
                         address = if add then (base + imm32) else (base - imm32);
                         R[t] = MemU[address,4];
                     */
-                    let address = self.virtual_pc + (imm as u32);
+                    let address = self.virtual_pc + ((imm as u32) << 2);
                     self.sreg[reg] = self.memory.get_u32(address)?;
                     return Ok(0);
                 },

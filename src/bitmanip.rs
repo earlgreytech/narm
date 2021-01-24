@@ -15,7 +15,7 @@ pub trait IntAlign{
 
 impl IntAlign for u32{
     fn align4(&self) -> u32{
-        self & 0b1111_1111_1111_1100
+        (*self) & (!0b11)
     }
 }
 
