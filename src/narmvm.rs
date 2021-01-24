@@ -66,18 +66,21 @@ impl NarmVM{
         }
     }
     pub fn cycle(&mut self) -> Result<u32, NarmError>{
+        if self.pc & 1 == 0{
+            return Err(NarmError::InvalidArchitectureMode);
+        }
         if self.gas_remaining == 0{
             return Err(NarmError::OutOfGas);
         }
         self.gas_remaining -= 1;
         self.virtual_pc = self.pc.align4() + 4;
         self.last_pc = self.pc;
-        let opcode = self.memory.get_u16(self.pc)?;
+        let opcode = self.memory.get_u16(self.get_pc_address())?;
         self.pc += 2;
 
         if is_32bit_opcode(opcode){
             
-            let opcode32 = ((opcode as u32) << 16) | (self.memory.get_u16(self.pc)? as u32);
+            let opcode32 = ((opcode as u32) << 16) | (self.memory.get_u16(self.get_pc_address())? as u32);
             self.pc += 2;
             let op32 = opcode32 & !MASK32_X1_IMM10_X1_X1_IMM11;
             let (s, imm1, j1, j2, imm2) = decode32_x1_imm10_x1_x1_imm11(opcode32);
@@ -97,8 +100,8 @@ impl NarmVM{
                 //25 bits total length
                 let imm32 = sign_extend32(value, 25);
                 let lr = LongRegister{register: 14};
-                self.set_reg(&lr, self.virtual_pc | 1);
-                self.set_pc((self.virtual_pc as i32).wrapping_add(imm32) as u32);
+                self.set_reg(&lr, self.virtual_pc | (self.pc & 1)); //or with bottom bit of current pc to copy interworking mode
+                self.set_thumb_pc_address((self.virtual_pc as i32).wrapping_add(imm32) as u32);
                 return Ok(0);
             }else{
                 //later support MSR/MRS?
@@ -227,7 +230,7 @@ impl NarmVM{
                 //1110_0xxx_xxxx_xxxx B T2
                 0b1110_0000_0000_0000 => {
                     let label = sign_extend32((((reg as u32) << 8) | (imm as u32)) << 1, 12);
-                    self.pc = (self.virtual_pc as i32 + label) as u32;
+                    self.set_thumb_pc_address((self.virtual_pc as i32 + label) as u32);
                     return Ok(0);
                 }
                 _ => {}
@@ -567,8 +570,8 @@ impl NarmVM{
                         self.set_reg(&reg2, self.get_last_pc());
                     }
                     else if reg2.register == 15 {
-                        // The least significant bit is used for determining instruction execution state. For our application it's always 0. 
-                        self.set_pc(self.get_reg(&reg1) & 0b11111111111111111111111111111110);
+                        // Note this is a simple branch in ARMv6, but in ARMv7 will be interworking
+                        self.set_thumb_pc_address(self.get_reg(&reg1));
                     }
                     else {
                         self.set_reg(&reg2, self.get_reg(&reg1));
@@ -681,7 +684,7 @@ impl NarmVM{
                 }
                 if self.condition_passes(cond){
                     let label = sign_extend32(imm, 8);
-                    self.pc = (self.virtual_pc as i32 + label) as u32;
+                    self.set_thumb_pc_address((self.virtual_pc as i32 + label) as u32);
                 }
                 return Ok(0);
             }
@@ -704,7 +707,7 @@ impl NarmVM{
                     }
                     if option{
                         //pop PC
-                        self.set_pc(self.memory.get_u32(address)?);
+                        self.set_interworking_pc(self.memory.get_u32(address)?)?;
                         count += 1;
                     }
                     self.set_sp(self.get_sp() + 4 * count);
@@ -744,14 +747,14 @@ impl NarmVM{
             match op{
                 //0100_0111_0xxx_xLLL BX T1
                 0b0100_0111_0000_0000 => {
-                    self.set_pc(value);
+                    self.set_interworking_pc(value)?;
                     return Ok(0);
                 },
                 //0100_0111_1xxx_xLLL BLX T1
                 0b0100_0111_1000_0000 => {
                     let lr = LongRegister{register: 14};
                     self.set_reg(&lr, (self.virtual_pc - 2) | 1);
-                    self.set_pc(value);
+                    self.set_interworking_pc(value)?;
                     return Ok(0);
                 }
                 _ => {}
@@ -813,8 +816,16 @@ impl NarmVM{
     pub fn get_last_pc(&self) -> u32{
         self.last_pc
     }
-    pub fn set_pc(&mut self, value: u32){
-        self.pc = value;
+    pub fn set_thumb_pc_address(&mut self, value: u32){
+        self.pc = value | 1;
+    }
+    pub fn set_interworking_pc(&mut self, value: u32) -> Result<(), NarmError>{
+        if value & 1 == 0{
+            Err(NarmError::InvalidArchitectureMode)
+        }else{
+            self.pc = value;
+            Ok(())
+        }
     }
     pub fn get_sp(&self) -> u32{
         self.long_registers[13 - 8]
@@ -862,6 +873,9 @@ impl NarmVM{
             return self.pc;
         }
         0
+    }
+    pub fn get_pc_address(&self) -> u32{
+        self.pc & (!1)
     }
     pub fn print_diagnostics(&self){
         for i in 0..=15{

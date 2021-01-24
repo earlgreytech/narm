@@ -24,7 +24,8 @@ pub enum  NarmError{
     ConflictingMemoryAddition,
     InvalidOpcode(u16),
     InvalidOpcode32(u32),
-    OutOfGas
+    OutOfGas,
+    InvalidArchitectureMode //used when trying to jump to non-thumb code
 }
 
 /// This specifies a register beyond r0-r7
