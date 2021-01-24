@@ -877,6 +877,17 @@ impl NarmVM{
     pub fn get_pc_address(&self) -> u32{
         self.pc & (!1)
     }
+    pub fn external_set_reg(&mut self, reg: usize, value: u32){
+        if reg < 8 {
+            self.sreg[reg] = value;
+        }
+        else if reg < 15 {
+            self.long_registers[reg - 8] = value;
+        }
+        else if reg == 15 {
+            self.pc = value;
+        }
+    }
     pub fn get_diagnostics_message(&self) -> String{
         let mut msg = String::default();
         for i in 0..=15{
