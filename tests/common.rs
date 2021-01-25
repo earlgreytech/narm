@@ -287,3 +287,13 @@ pub fn format_padded_hex(int: u32) -> String {
     }
     string.to_uppercase()
 }
+
+// Macro to reduce boilerplate code when executing VM instance and asserting results
+#[macro_export]
+macro_rules! execute_and_assert {
+    ( $vmstate:ident, $vm:ident ) => {
+        assert_eq!($vm.execute().unwrap(), 0xFF);
+        $vm.print_diagnostics();
+        assert_vm_eq!($vmstate, $vm);
+    }
+}
