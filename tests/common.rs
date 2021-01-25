@@ -100,28 +100,15 @@ pub fn asm(input: &str) -> elf::File {
     elf::File::open_path(output).unwrap()
 }
 
-/*
-
---- VM state assertion infrastructure ---
-
-The VMState structure contains expected values for each registry and flag exposed by the VM
-By default everything is checked and expected to be 0/false, but tests can be altered or turned off individually
-
-Basic test format:
-
-    let mut vm = ...
-
-    ...
-
-    let mut vm_expected: VMState = Default::default(); <- Default is check all, 0 for regs and false (ie unset/0) for flags
-
-    vm_expected.r[0] = Some(0xAF); <- r0 should be this value
-    vm_expected.c = Some(true);             <- Carry flag should be true (ie set/1)
-    vm_expected.r[1] = None;                <- r1 won't be checked, any value will pass the test
-
-    assert_vm_eq!(vm_expected, vm);         <- Actually do the asserts
-
-*/
+/***************************************************************
+***                                                          ***
+***   VM state assertion infrastructure                      ***
+***                                                          ***
+***   Contains a structure holding a VM state,               ***
+***   where values can easily be set (or ignored).           ***
+***   Also contains macros to assert, load and print state   ***
+***                                                          ***
+***************************************************************/
 
 // TODO: Handle special registers differently?
 // TODO: Implement memory area assertion? Maybe too advanced?
@@ -163,17 +150,6 @@ impl Default for VMState {
         }
     }
 }
-
-// Format u32 to hex string approperiatly padded with zeroes for easy side-by-side comparison
-// TODO: Underscores?
-pub fn format_padded_hex(int: u32) -> String {
-    let mut string = String::from(format!("{:x}", int));
-    while string.len() < 8 {
-        string = format!("0{}", string)
-    }
-    string.to_uppercase()
-}
-
 // Macro to assert values in VMState struct against the actual VM's state
 // Includes a custom error message that formats register values to padded hex strings in addition to the default decimal print
 // This could be done as a function, but that would bloat a stack trace compared to an inlined macro.
@@ -247,5 +223,67 @@ macro_rules! load_into_vm {
             Some(x) => $vm.cpsr.v = x,
             None    => (),
         };
+        // PC, program counter
+        match ($vmstate.pc_address) {
+            Some(x) => $vm.set_thumb_pc_address(x),
+            None    => (),
+        };
     };
+}
+
+// Macro to print values in VMState struct for debug output
+// This could be done as a function, but I made the assertion thing above a macro and now it's too late
+#[macro_export]
+macro_rules! print_vm_state {
+    ( $vmstate:ident ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($vmstate.r[i]) {
+                Some(x) => println!("r{}: 0x{}", i, format_padded_hex(x)),
+                None => println!("r{}: (Ignored)", i),
+            };
+        }
+        // Negative flag
+        match ($vmstate.n) {
+            Some(x) => println!("n: {}", x),
+            None => println!("n: (Ignored)"),
+        };
+        // Zero flag
+        match ($vmstate.z) {
+            Some(x) => println!("z: {}", x),
+            None => println!("z: (Ignored)"),
+        };
+        // Carry (Overflow) flag
+        match ($vmstate.c) {
+            Some(x) => println!("c: {}", x),
+            None => println!("c: (Ignored)"),
+        };
+        // V (Signed Overflow) flag
+        match ($vmstate.v) {
+            Some(x) => println!("v: {}", x),
+            None => println!("v: (Ignored)"),
+        };
+        // PC, program counter
+        match ($vmstate.pc_address) {
+            Some(x) => println!("pc address: {}", format_padded_hex(x)),
+            None    => println!("pc address: (Ignored)"),
+        };
+    };
+}
+
+/***********************************************
+***                                          ***
+***   Misc supporting functions and macros   ***
+***                                          ***
+***********************************************/
+
+// Format u32 to hex string approperiatly padded with zeroes for easy side-by-side comparison
+// TODO: Underscores?
+// TODO: Replace with build-in functionality used in VM code?
+pub fn format_padded_hex(int: u32) -> String {
+    let mut string = String::from(format!("{:x}", int));
+    while string.len() < 8 {
+        string = format!("0{}", string)
+    }
+    string.to_uppercase()
 }
