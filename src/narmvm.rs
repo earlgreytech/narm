@@ -760,6 +760,21 @@ impl NarmVM{
                 _ => {}
             }
         }
+        //imm7
+        {
+            let op = opcode & !MASK_IMM7;
+            let imm = decode_imm7(opcode);
+            match op{
+                //0100_0111_0xxx_xxxx ADD sp+imm T2 noflags
+                0b1011_0000_0000_0000 => {
+                    let sp = LongRegister{ register: 13 };
+                    let result = self.op_add(self.get_sp(), (imm as u32) << 2, false, false);
+                    self.set_reg(&sp, result);
+                    return Ok(0);
+                }
+                _ => {}
+            }
+        }
 
 
         Err(NarmError::InvalidOpcode(opcode))
