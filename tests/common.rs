@@ -200,33 +200,33 @@ macro_rules! load_into_vm {
         for i in 0..=14 {
             match ($vmstate.r[i]) {
                 Some(x) => $vm.external_set_reg(i, x),
-                None    => (),
+                None => (),
             };
         }
         // Negative flag
         match ($vmstate.n) {
             Some(x) => $vm.cpsr.n = x,
-            None    => (),
+            None => (),
         };
         // Zero flag
         match ($vmstate.z) {
             Some(x) => $vm.cpsr.z = x,
-            None    => (),
+            None => (),
         };
         // Carry (Overflow) flag
         match ($vmstate.c) {
             Some(x) => $vm.cpsr.c = x,
-            None    => (),
+            None => (),
         };
         // V (Signed Overflow) flag
         match ($vmstate.v) {
             Some(x) => $vm.cpsr.v = x,
-            None    => (),
+            None => (),
         };
         // PC, program counter
         match ($vmstate.pc_address) {
             Some(x) => $vm.set_thumb_pc_address(x),
-            None    => (),
+            None => (),
         };
     };
 }
@@ -266,7 +266,7 @@ macro_rules! print_vm_state {
         // PC, program counter
         match ($vmstate.pc_address) {
             Some(x) => println!("pc address: {}", format_padded_hex(x)),
-            None    => println!("pc address: (Ignored)"),
+            None => println!("pc address: (Ignored)"),
         };
     };
 }
@@ -295,5 +295,5 @@ macro_rules! execute_and_assert {
         assert_eq!($vm.execute().unwrap(), 0xFF);
         $vm.print_diagnostics();
         assert_vm_eq!($vmstate, $vm);
-    }
+    };
 }
