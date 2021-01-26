@@ -16,24 +16,28 @@ ADD SP,<Rm> T2              (sp_reg_sp)     - SP  <- SP  + Rm
 
 General test cases:
 
-- Do SP addition with SP as destination
-- Do SP addition with a register as destination
+- Do SP addition with SP as destination + Preserve flags
+- Do SP addition with a register as destination + Preserve flags
 
 The reference for these tests is currently official documentations and a QEMU-based VM
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Do SP addition with SP as destination
+// Do SP addition with SP as destination + Preserve flags
 #[test]
 pub fn test_add_sp_to_sp() {
-    println!("\n>>> Add sp ops test case: Do SP addition with SP as destination \n");
+    println!("\n>>> Add sp ops test case: Do SP addition with SP as destination + Preserve flags \n");
 
     let mut vm_state: VMState = Default::default();
 
     // Initial state
     vm_state.r[0] = Some(0x01FC);
     vm_state.r[13] = Some(0x01_0000);
+    vm_state.n = Some(true);
+    vm_state.z = Some(true);
+    vm_state.c = Some(true);
+    vm_state.v = Some(true);
 
     println!("\n>>> Creating VM(s) \n");
 
@@ -72,16 +76,20 @@ pub fn test_add_sp_to_sp() {
     execute_and_assert!(vm_state, vm_sp_reg_sp);
 }
 
-// Do SP addition with register as destination
+// Do SP addition with register as destination + Preserve flags
 #[test]
 pub fn test_add_sp_to_reg() {
-    println!("\n>>> Add sp ops test case: Do SP addition with SP as destination \n");
+    println!("\n>>> Add sp ops test case: Do SP addition with SP as destination + Preserve flags \n");
 
     let mut vm_state: VMState = Default::default();
 
     // Initial state
     vm_state.r[0] = Some(0x03FC);
     vm_state.r[13] = Some(0x01_0000);
+    vm_state.n = Some(true);
+    vm_state.z = Some(true);
+    vm_state.c = Some(true);
+    vm_state.v = Some(true);
 
     println!("\n>>> Creating VM(s) \n");
 
