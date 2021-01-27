@@ -20,10 +20,10 @@ General test cases:
 
 - Calculate sum of two registers
 - Calculate sum of a register and an immediate value
-- Set Negative flag when result is negative + unset other flags
-- Set Zero flag when result is zero + unset other flags
-- Set Carry flag when addition cause unsigned overflow + unset other flags
-- Set V flag when addition cause signed overflow + unset other flags
+- Set Negative flag when result is negative + clear other flags
+- Set Zero flag when result is zero + clear other flags
+- Set Carry flag when addition cause unsigned overflow + clear other flags
+- Set V flag when addition cause signed overflow + clear other flags
 
 Special test case for ADD <Rdn>, <Rm>:
 
