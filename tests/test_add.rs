@@ -2,6 +2,7 @@ extern crate narm;
 mod common;
 
 use common::*;
+use narm::narmvm::*;
 
 /*
 
@@ -9,94 +10,81 @@ Unit test for Add operators
 
 Included varieties:
 
-ADDS <Rd>, <Rn>, #<imm3>    (smallimm)      - Rd  <- Rn  + imm
-ADDS <Rdn>, #<imm8>         (bigimm)        - Rdn <- Rdn + imm
-ADDS <Rd>, <Rn>, <Rm>       (3reg)          - Rd  <- Rn  + Rm
-ADD <Rdn>, <Rm>             (high)          - Rdn <- Rdn + Rm (one or both should be high register)
-ADCS <Rdn>, <Rm>            (carry)         - Rdn <- Rdn + Rm + Carry flag
+ADDS <Rd>, <Rn>, #<imm3> T1     - Rd  <- Rn  + imm (+set all flags)
+ADDS <Rdn>, #<imm8> T2          - Rdn <- Rdn + imm (+set all flags)
+ADDS <Rd>, <Rn>, <Rm> T1        - Rd  <- Rn  + Rm (+set all flags)
+ADD <Rdn>, <Rm> T2              - Rdn <- Rdn + Rm (one or both should be high register)
+ADCS <Rdn>, <Rm> T1             - Rdn <- Rdn + Rm + Carry flag (+set all flags)
 
 General test cases:
 
 - Calculate sum of two registers
 - Calculate sum of a register and an immediate value
-- Set Negative flag when result is negative (highest bit set)
-- Set Zero flag when result is zero
-- Set Carry flag when addition cause unsigned overflow
-- Set V flag when addition cause signed overflow
+- Set Negative flag when result is negative + unset other flags
+- Set Zero flag when result is zero + unset other flags
+- Set Carry flag when addition cause unsigned overflow + unset other flags
+- Set V flag when addition cause signed overflow + unset other flags
 
 Special test case for ADD <Rdn>, <Rm>:
 
 - Calculate sum of two high registers + Preserve flags
 
-Special test case for ADCS <Rdn>, <Rm>
-
-- Add with carry flag set
+(Behavior for ADCS + carry flag is implicitly tested in the common tests)
 
 The reference for these tests is currently official documentations and a QEMU-based VM
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
+// String representation of ops for use in debug output
+const OPCODES: &'static [&'static str] = &[
+    "ADDS <Rd>, <Rn>, #<imm3> T1",
+    "ADDS <Rdn>, #<imm8> T2",
+    "ADDS <Rd>, <Rn>, <Rm> T1",
+    "ADD <Rdn>, <Rm> T2",
+    "ADCS <Rdn>, <Rm> T1",
+];
+
+// Simple constant for number of opcodes tested in this file
+const NUM_OPCODES: &'static usize = &5;
+
 // Calculate sum of two registers
 #[test]
 pub fn test_add_regadd() {
     println!("\n>>> Add ops test case: Calculate sum of two registers \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0x06);
-    vm_state.r[1] = Some(0x06);
-    vm_state.r[2] = Some(0x0F);
-    vm_state.r[8] = Some(0x0F);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![2, 3, 4];
 
-    println!("\n>>> Creating VM(s) \n");
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x0001_1111));
+    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x0010_3333));
+    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0100_5555));
+    common_state!(applicable_op_ids, vm_states.r[8] = Some(0x1000_7777));
 
-    // ADDS <Rd>, <Rn>, #<imm3> - Not applicable
+    // VM initialization
 
-    // ADDS <Rdn>, #<imm8> - Not applicable
+    // 0: ADDS <Rd>, <Rn>, #<imm3> - Not applicable
 
-    // ADDS <Rd>, <Rn>, <Rm>
-    let mut vm_3reg = create_vm_from_asm(
-        "
-        adds r0, r1, r2
-        svc                 #0xFF
-    ",
-    );
+    // 1: ADDS <Rdn>, #<imm8> - Not applicable
 
-    // ADD <Rdn>, <Rm>
-    let mut vm_high = create_vm_from_asm(
-        "
-        add  r0, r8
-        svc                 #0xFF
-    ",
-    );
-    
-    // ADCS <Rdn>, <Rm>
-    let mut vm_carry = create_vm_from_asm(
-        "
-        adcs  r0, r2
-        svc                 #0xFF
-    ",
-    );
+    // 2: ADDS <Rd>, <Rn>, <Rm>
+    create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
+    vm_states[2].r[0] = Some(0x0110_8888);
 
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_3reg);
-    load_into_vm!(vm_state, vm_high);
-    load_into_vm!(vm_state, vm_carry);
+    // 3: ADD <Rdn>, <Rm>
+    create_vm!(vms, vm_states, 3, "add  r0, r8");
+    vm_states[3].r[0] = Some(0x1001_8888);
 
-    // Expected state diff after execution
-    vm_state.r[0] = Some(0x15);
+    // 4: ADCS <Rdn>, <Rm>
+    create_vm!(vms, vm_states, 4, "adcs  r0, r1");
+    vm_states[4].r[0] = Some(0x0011_4444);
 
-    println!("\n>>> [1/3] Testing for op variant: ADDS <Rd>, <Rn>, <Rm> \n");
-    execute_and_assert!(vm_state, vm_3reg);
-
-    println!("\n>>> [2/3] Testing for op variant: ADD <Rdn>, <Rm> \n");
-    execute_and_assert!(vm_state, vm_high);
-    
-    println!("\n>>> [3/3] Testing for op variant: ADCS <Rdn>, <Rm> \n");
-    execute_and_assert!(vm_state, vm_carry);
+    run_test!(vms, vm_states, applicable_op_ids);
 }
 
 // Calculate sum of a register and an immediate value
@@ -104,333 +92,239 @@ pub fn test_add_regadd() {
 pub fn test_add_immadd() {
     println!(">>> Add ops test case: Calculate sum of a register and an immediate value \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0x07);
-    vm_state.r[1] = Some(0xFF);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![0, 1];
 
-    // ADDS <Rd>, <Rn>, #<imm3>
-    let mut vm_smallimm = create_vm_from_asm(
-        "
-        adds r0, r1,        #0x07
-        svc                 #0xFF
-    ",
-    );
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x0011_3333));
+    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x1100_5555));
 
-    // ADDS <Rdn>, #<imm8>
-    let mut vm_bigimm = create_vm_from_asm(
-        "
-        adds r0,            #0xFF
-        svc                 #0xFF
-    ",
-    );
+    // VM initialization
 
-    // ADDS <Rd>, <Rn>, <Rm> - Not applicable
+    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
+    vm_states[0].r[0] = Some(0x1100_555C);
 
-    // ADD <Rdn>, <Rm> - Not applicable
+    // 1: ADDS <Rdn>, #<imm8>
+    create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
+    vm_states[1].r[0] = Some(0x0011_3432);
 
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_smallimm);
-    load_into_vm!(vm_state, vm_bigimm);
+    // 2: ADDS <Rd>, <Rn>, <Rm> - Not applicable
 
-    // Expected state diff after execution
-    vm_state.r[0] = Some(0x0106);
+    // 3: ADD <Rdn>, <Rm> - Not applicable
 
-    println!(">>> [1/2] Testing for op variant: ADDS <Rd>, <Rn>, #<imm3> ");
-    execute_and_assert!(vm_state, vm_smallimm);
+    // 4: ADCS <Rdn>, <Rm> - Not applicable
 
-    println!(">>> [2/2] Testing for op variant: ADDS <Rdn>, #<imm8> ");
-    execute_and_assert!(vm_state, vm_bigimm);
+    run_test!(vms, vm_states, applicable_op_ids);
 }
 
-// Set Negative flag when result is negative (highest bit set)
+// Set Negative flag when result is negative + unset other flags
 #[test]
 pub fn test_add_flag_neg() {
     println!(
-        ">>> Add ops test case: Set Negative flag when result is negative (highest bit set) \n"
+        ">>> Add ops test case: Set Negative flag when result is negative + unset other flags \n"
     );
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0x8000_0000);
-    vm_state.r[1] = Some(0x8000_00F8);
-    vm_state.r[2] = Some(0x07);
-    vm_state.r[3] = Some(0xFE);
-    vm_state.n = Some(false);
-    vm_state.z = Some(true);
-    vm_state.c = Some(true);
-    vm_state.v = Some(true);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![0, 1, 2, 4];
 
-    // ADDS <Rd>, <Rn>, #<imm3>
-    let mut vm_smallimm = create_vm_from_asm(
-        "
-        adds r0, r1,        #0x7
-        svc                 #0xFF
-    ",
-    );
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x8001_1111));
+    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x8010_3333));
+    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0100_5555));
 
-    // ADDS <Rdn>, #<imm8>
-    let mut vm_bigimm = create_vm_from_asm(
-        "
-        adds r0,            #0xFF
-        svc                 #0xFF
-    ",
-    );
+    common_state!(applicable_op_ids, vm_states.n = Some(false));
+    common_state!(applicable_op_ids, vm_states.z = Some(true));
+    common_state!(applicable_op_ids, vm_states.c = Some(true));
+    common_state!(applicable_op_ids, vm_states.v = Some(true));
 
-    // ADDS <Rd>, <Rn>, <Rm>
-    let mut vm_3reg = create_vm_from_asm(
-        "
-        adds r0, r1, r2
-        svc                 #0xFF
-    ",
-    );
+    // VM initialization
 
-    // ADD <Rdn>, <Rm> - Not applicable
-    
-    // ADCS <Rdn>, <Rm>
-    let mut vm_carry = create_vm_from_asm(
-        "
-        adcs r0, r3
-        svc                 #0xFF
-    ",
-    );
+    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
+    vm_states[0].r[0] = Some(0x8010_333A);
 
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_smallimm);
-    load_into_vm!(vm_state, vm_bigimm);
-    load_into_vm!(vm_state, vm_3reg);
-    load_into_vm!(vm_state, vm_carry);
+    // 1: ADDS <Rdn>, #<imm8>
+    create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
+    vm_states[1].r[0] = Some(0x8001_1210);
 
-    // Expected state diff after execution
-    vm_state.r[0] = Some(0x8000_00FF);
-    vm_state.n = Some(true);
-    vm_state.z = Some(false);
-    vm_state.c = Some(false);
-    vm_state.v = Some(false);
+    // 2: ADDS <Rd>, <Rn>, <Rm>
+    create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
+    vm_states[2].r[0] = Some(0x8110_8888);
 
-    println!(">>> [1/4] Testing for op variant: ADDS <Rd>, <Rn>, #<imm3> ");
-    execute_and_assert!(vm_state, vm_smallimm);
+    // 3: ADD <Rdn>, <Rm> - Not applicable
 
-    println!(">>> [2/4] Testing for op variant: ADDS <Rdn>, #<imm8> ");
-    execute_and_assert!(vm_state, vm_bigimm);
+    // 4: ADCS <Rdn>, <Rm>
+    create_vm!(vms, vm_states, 4, "adcs  r0, r2"); // + 1 (Carry)
+    vm_states[4].r[0] = Some(0x8101_6667);
 
-    println!(">>> [3/4] Testing for op variant: ADDS <Rd>, <Rn>, <Rm> ");
-    execute_and_assert!(vm_state, vm_3reg);
-    
-    println!(">>> [4/4] Testing for op variant: ADCD <Rdn>, <Rm> ");
-    execute_and_assert!(vm_state, vm_carry);
+    // Common expected post-execution state
+    common_state!(applicable_op_ids, vm_states.n = Some(true));
+    common_state!(applicable_op_ids, vm_states.z = Some(false));
+    common_state!(applicable_op_ids, vm_states.c = Some(false));
+    common_state!(applicable_op_ids, vm_states.v = Some(false));
+
+    run_test!(vms, vm_states, applicable_op_ids);
 }
 
-// Set Zero flag when result is zero
+// Set Zero flag when result is zero + unset other flags
 #[test]
 pub fn test_add_flag_zero() {
-    println!(">>> Add ops test case: Set Zero flag when result is zero \n");
+    println!(">>> Add ops test case: Set Zero flag when result is zero + unset other flags \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0xFFFF_FF01); // -0xFF
-    vm_state.r[1] = Some(0xFFFF_FFF9); // -0xF8
-    vm_state.r[2] = Some(0x07);
-    vm_state.r[3] = Some(0xFF);
-    vm_state.n = Some(true);
-    vm_state.z = Some(false);
-    vm_state.c = Some(false);
-    vm_state.v = Some(true);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![0, 1, 2, 4];
 
-    // ADDS <Rd>, <Rn>, #<imm3>
-    let mut vm_smallimm = create_vm_from_asm(
-        "
-        adds r0, r1,        #0x07
-        svc                 #0xFF
-    ",
-    );
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFFFF_FF01));
+    common_state!(applicable_op_ids, vm_states.r[1] = Some(0xFFFF_FFF9));
+    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0000_0007));
+    common_state!(applicable_op_ids, vm_states.r[3] = Some(0x0000_00FF));
 
-    // ADDS <Rdn>, #<imm8>
-    let mut vm_bigimm = create_vm_from_asm(
-        "
-        adds r0,            #0xFF
-        svc                 #0xFF
-    ",
-    );
+    common_state!(applicable_op_ids, vm_states.n = Some(true));
+    common_state!(applicable_op_ids, vm_states.z = Some(false));
+    common_state!(applicable_op_ids, vm_states.c = Some(false)); // Add wrap around to 0 -> set overflow/carry
+    common_state!(applicable_op_ids, vm_states.v = Some(true));
 
-    // ADDS <Rd>, <Rn>, <Rm>
-    let mut vm_3reg = create_vm_from_asm(
-        "
-        adds r0, r1, r2
-        svc                 #0xFF
-    ",
-    );
-    
-    // ADCS <Rdn>, <Rm>
-    let mut vm_carry = create_vm_from_asm(
-        "
-        adcs r0, r3
-        svc                 #0xFF
-    ",
-    );
+    // VM initialization
 
-    // ADD <Rdn>, <Rm> - Not applicable
+    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
 
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_smallimm);
-    load_into_vm!(vm_state, vm_bigimm);
-    load_into_vm!(vm_state, vm_3reg);
-    load_into_vm!(vm_state, vm_carry);
+    // 1: ADDS <Rdn>, #<imm8>
+    create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
 
-    // Expected state diff after execution
-    vm_state.r[0] = Some(0x00);
-    vm_state.n = Some(false);
-    vm_state.z = Some(true);
-    vm_state.c = Some(true);
-    vm_state.v = Some(false);
+    // 2: ADDS <Rd>, <Rn>, <Rm>
+    create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
 
-    println!(">>> [1/3] Testing for op variant: ADDS <Rd>, <Rn>, #<imm3> ");
-    execute_and_assert!(vm_state, vm_smallimm);
+    // 3: ADD <Rdn>, <Rm> - Not applicable
 
-    println!(">>> [2/3] Testing for op variant: ADDS <Rdn>, #<imm8> ");
-    execute_and_assert!(vm_state, vm_bigimm);
+    // 4: ADCS <Rdn>, <Rm>
+    create_vm!(vms, vm_states, 4, "adcs  r0, r3");
 
-    println!(">>> [3/3] Testing for op variant: ADDS <Rd>, <Rn>, <Rm> ");
-    execute_and_assert!(vm_state, vm_3reg);
-    
-    println!(">>> [3/3] Testing for op variant: ADCS <Rdn>, <Rm> ");
-    execute_and_assert!(vm_state, vm_carry);
+    // Common expected post-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x00));
+
+    common_state!(applicable_op_ids, vm_states.n = Some(false));
+    common_state!(applicable_op_ids, vm_states.z = Some(true));
+    common_state!(applicable_op_ids, vm_states.c = Some(true));
+    common_state!(applicable_op_ids, vm_states.v = Some(false));
+
+    run_test!(vms, vm_states, applicable_op_ids);
 }
 
-// Set Carry flag when addition cause unsigned overflow
+// Set Carry flag when addition cause unsigned overflow + unset other flags
 #[test]
 pub fn test_add_flag_carry() {
-    println!(">>> Add ops test case: Set Carry flag when addition cause unsigned overflow \n");
+    println!(">>> Add ops test case: Set Carry flag when addition cause unsigned overflow + unset other flags \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0xFFFF_FFFF);
-    vm_state.r[1] = Some(0xFF);
-    vm_state.r[2] = Some(0xFFFF_FFFF);
-    vm_state.n = Some(true);
-    vm_state.z = Some(true);
-    vm_state.c = Some(false);
-    vm_state.v = Some(true);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![0, 1, 2, 4];
 
-    // ADDS <Rd>, <Rn>, #<imm3>
-    let mut vm_smallimm = create_vm_from_asm(
-        "
-        adds r0, r2,        #0x07
-        svc                 #0xFF
-    ",
-    );
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFFFF_FFFF));
+    common_state!(applicable_op_ids, vm_states.r[1] = Some(0xFFFF_FFFF));
+    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x06));
 
-    // ADDS <Rdn>, #<imm8>
-    let mut vm_bigimm = create_vm_from_asm(
-        "
-        adds r0,            #0xFF
-        svc                 #0xFF
-    ",
-    );
+    common_state!(applicable_op_ids, vm_states.n = Some(true));
+    common_state!(applicable_op_ids, vm_states.z = Some(true));
+    common_state!(applicable_op_ids, vm_states.c = Some(false));
+    common_state!(applicable_op_ids, vm_states.v = Some(true));
 
-    // ADDS <Rd>, <Rn>, <Rm>
-    let mut vm_3reg = create_vm_from_asm(
-        "
-        adds r0, r1, r2
-        svc                 #0xFF
-    ",
-    );
+    // VM initialization
 
-    // ADD <Rdn>, <Rm> - Not applicable
+    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
+    vm_states[0].r[0] = Some(0x06);
 
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_smallimm);
-    load_into_vm!(vm_state, vm_bigimm);
-    load_into_vm!(vm_state, vm_3reg);
+    // 1: ADDS <Rdn>, #<imm8>
+    create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
+    vm_states[1].r[0] = Some(0xFE);
 
-    // Expected state diff after execution
-    vm_state.r[0] = None;
-    vm_state.n = Some(false);
-    vm_state.z = Some(false);
-    vm_state.c = Some(true);
-    vm_state.v = Some(false);
+    // 2: ADDS <Rd>, <Rn>, <Rm>
+    create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
+    vm_states[2].r[0] = Some(0x05);
 
-    println!(">>> [1/3] Testing for op variant: ADDS <Rd>, <Rn>, #<imm3> ");
-    execute_and_assert!(vm_state, vm_smallimm);
+    // 3: ADD <Rdn>, <Rm> - Not applicable
 
-    println!(">>> [2/3] Testing for op variant: ADDS <Rdn>, #<imm8> ");
-    execute_and_assert!(vm_state, vm_bigimm);
+    // 4: ADCS <Rdn>, <Rm>
+    create_vm!(vms, vm_states, 4, "adcs  r0, r2");
+    vm_states[4].r[0] = Some(0x05);
 
-    println!(">>> [3/3] Testing for op variant: ADDS <Rd>, <Rn>, <Rm> ");
-    execute_and_assert!(vm_state, vm_3reg);
+    // Common expected post-execution state
+    common_state!(applicable_op_ids, vm_states.n = Some(false));
+    common_state!(applicable_op_ids, vm_states.z = Some(false));
+    common_state!(applicable_op_ids, vm_states.c = Some(true));
+    common_state!(applicable_op_ids, vm_states.v = Some(false));
+
+    run_test!(vms, vm_states, applicable_op_ids);
 }
 
-// Set V flag when addition cause signed overflow
+// Set V flag when addition cause signed overflow + unset other flags
 #[test]
 pub fn test_add_flag_v() {
-    println!(">>> Add ops test case: Set V flag when addition cause signed overflow \n");
+    println!(">>> Add ops test case: Set V flag when addition cause signed overflow + unset other flags \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0x7FFF_FFFF);
-    vm_state.r[1] = Some(0xFF);
-    vm_state.r[2] = Some(0x7FFF_FFFF);
-    vm_state.n = Some(false); // Will be set too because signed overflow by definition changes sign
-    vm_state.z = Some(true);
-    vm_state.c = Some(true);
-    vm_state.v = Some(false);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![0, 1, 2, 4];
 
-    // ADDS <Rd>, <Rn>, #<imm3>
-    let mut vm_smallimm = create_vm_from_asm(
-        "
-        adds r0, r2,        #0x07
-        svc                 #0xFF
-    ",
-    );
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x7FFF_FFFF));
+    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x7FFF_FFFF));
+    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x06));
 
-    // ADDS <Rdn>, #<imm8>
-    let mut vm_bigimm = create_vm_from_asm(
-        "
-        adds r0,            #0xFF
-        svc                 #0xFF
-    ",
-    );
+    common_state!(applicable_op_ids, vm_states.n = Some(false)); // Causing sign overflow with add -> negative number
+    common_state!(applicable_op_ids, vm_states.z = Some(true));
+    common_state!(applicable_op_ids, vm_states.c = Some(true));
+    common_state!(applicable_op_ids, vm_states.v = Some(false));
 
-    // ADDS <Rd>, <Rn>, <Rm>
-    let mut vm_3reg = create_vm_from_asm(
-        "
-        adds r0, r1, r2
-        svc                 #0xFF
-    ",
-    );
+    // VM initialization
 
-    // ADD <Rdn>, <Rm> - Not applicable
+    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
+    vm_states[0].r[0] = Some(0x8000_0006);
 
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_smallimm);
-    load_into_vm!(vm_state, vm_bigimm);
-    load_into_vm!(vm_state, vm_3reg);
+    // 1: ADDS <Rdn>, #<imm8>
+    create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
+    vm_states[1].r[0] = Some(0x8000_00FE);
 
-    // Expected state diff after execution
-    vm_state.r[0] = None;
-    vm_state.n = Some(true);
-    vm_state.z = Some(false);
-    vm_state.c = Some(false);
-    vm_state.v = Some(true);
+    // 2: ADDS <Rd>, <Rn>, <Rm>
+    create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
+    vm_states[2].r[0] = Some(0x8000_0005);
 
-    println!(">>> [1/3] Testing for op variant: ADDS <Rd>, <Rn>, #<imm3> ");
-    execute_and_assert!(vm_state, vm_smallimm);
+    // 3: ADD <Rdn>, <Rm> - Not applicable
 
-    println!(">>> [2/3] Testing for op variant: ADDS <Rdn>, #<imm8> ");
-    execute_and_assert!(vm_state, vm_bigimm);
+    // 4: ADCS <Rdn>, <Rm>
+    create_vm!(vms, vm_states, 4, "adcs  r0, r2"); // +1 (carry)
+    vm_states[4].r[0] = Some(0x8000_0006);
 
-    println!(">>> [3/3] Testing for op variant: ADDS <Rd>, <Rn>, <Rm> ");
-    execute_and_assert!(vm_state, vm_3reg);
+    // Common expected post-execution state
+    common_state!(applicable_op_ids, vm_states.n = Some(true)); // Causing sign overflow with add -> negative number
+    common_state!(applicable_op_ids, vm_states.z = Some(false));
+    common_state!(applicable_op_ids, vm_states.c = Some(false));
+    common_state!(applicable_op_ids, vm_states.v = Some(true));
+
+    run_test!(vms, vm_states, applicable_op_ids);
 }
 
 // ADD <Rdn>, <Rm>: Calculate sum of two high registers + Preserve flags
@@ -438,34 +332,25 @@ pub fn test_add_flag_v() {
 pub fn test_add_high_noflags() {
     println!("\n>>> ADDS <Rd>, <Rn>, <Rm> op special test case: Calculate sum of two high registers + Preserve flags \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[8] = Some(0xFF);
-    vm_state.r[9] = Some(0x0A);
-    vm_state.n = Some(true);
-    vm_state.z = Some(true);
-    vm_state.c = Some(true);
-    vm_state.v = Some(true);
-    
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![3];
 
-    println!("\n>>> Creating VM(s) \n");
+    // VM initialization
 
-    // ADD <Rdn>, <Rm>
-    let mut vm_high = create_vm_from_asm(
-        "
-        add  r8, r9
-        svc                 #0xFF
-    ",
-    );
+    // 3: ADD <Rdn>, <Rm>
+    vm_states[3].r[8] = Some(0x0011_3333);
+    vm_states[3].r[9] = Some(0x1100_5555);
 
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_high);
+    vm_states[3].n = Some(true);
+    vm_states[3].z = Some(true);
+    vm_states[3].c = Some(true);
+    vm_states[3].v = Some(true);
+    create_vm!(vms, vm_states, 3, "add r8, r9");
+    vm_states[3].r[8] = Some(0x1111_8888);
 
-    // Expected state diff after execution
-    vm_state.r[8] = Some(0x0109);
-
-    println!("\n>>> [1/1] Testing for op variant: ADD <Rdn>, <Rm> \n");
-    execute_and_assert!(vm_state, vm_high);
+    run_test!(vms, vm_states, applicable_op_ids);
 }

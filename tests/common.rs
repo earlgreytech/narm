@@ -425,7 +425,7 @@ macro_rules! create_vm {
     };
 
     ( $vms:ident, $states:ident, $index:expr, $op:literal ) => {
-        println!("\n>>> Creating VM for op variant: {};", OPCODE[$index]);
+        println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
         print_vm_state!($states[$index]);
         println!("\n>>> VM debug output: \n");
@@ -454,7 +454,7 @@ macro_rules! run_test {
                 "\n>>> [{}/{}] Testing for op variant: {} \n",
                 i + 1,
                 op_count,
-                OPCODE[current_op]
+                OPCODES[current_op]
             );
             execute_and_assert!($states, $vms, current_op);
         }

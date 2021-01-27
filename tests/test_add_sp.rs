@@ -2,128 +2,116 @@ extern crate narm;
 mod common;
 
 use common::*;
+use narm::narmvm::*;
 
 /*
 
 Unit test for ADD operators using the SP
 
+Note that since the SP is aligned by 4 the following applies: 
+- When adding with register the lowest 2 bits are ignored/zeroed
+- Immediate values have to be multiples of 4, but can be 2 bits "bigger" than listed because of built-in left shift
+
 Included varieties:
 
-ADD <Rd>,SP,#<imm8> T1      (sp_imm_reg)    - Rd  <- SP  + imm  NOTE: Actually 10 bit imm with lowest 2 bits omitted and forced to 0
-ADD SP,SP,#<imm7> T2        (sp_imm_sp)     - SP  <- SP  + imm  NOTE: Actually 9 bit imm with lowest 2 bits omitted and forced to 0
-ADD <Rdm>, SP, <Rdm> T1     (sp_reg_reg)    - Rdn <- Rdn + SP
-ADD SP,<Rm> T2              (sp_reg_sp)     - SP  <- SP  + Rm
+ADD <Rd>, SP, #<imm8> T1        - Rd  <- SP  + imm 
+ADD SP, SP, #<imm7> T2          - SP  <- SP  + imm 
+ADD <Rdm>, SP, <Rdm> T1         - Rdn <- Rdn + SP
+ADD SP, <Rm> T2                 - SP  <- SP  + Rm
 
 General test cases:
 
-- Do SP addition with SP as destination + Preserve flags
-- Do SP addition with a register as destination + Preserve flags
+- SP addition with SP as destination + Preserve flags
+- SP addition with a register as destination + Preserve flags
 
 The reference for these tests is currently official documentations and a QEMU-based VM
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Do SP addition with SP as destination + Preserve flags
+// String representation of ops for use in debug output
+const OPCODES: &'static [&'static str] = &[
+    "ADD <Rd>, SP, #<imm8> T1",
+    "ADD SP, SP, #<imm7> T2",
+    "ADD <Rdm>, SP, <Rdm> T1",
+    "ADD SP, <Rm> T2",
+];
+
+// Simple constant for number of opcodes tested in this file
+const NUM_OPCODES: &'static usize = &4;
+
+// SP addition with SP as destination + Preserve flags
 #[test]
 pub fn test_add_sp_to_sp() {
-    println!("\n>>> Add sp ops test case: Do SP addition with SP as destination + Preserve flags \n");
+    println!("\n>>> Add sp ops test case: SP addition with SP as destination + Preserve flags \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0x01FC);
-    vm_state.r[13] = Some(0x01_0000);
-    vm_state.n = Some(true);
-    vm_state.z = Some(true);
-    vm_state.c = Some(true);
-    vm_state.v = Some(true);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![1, 3];
 
-    println!("\n>>> Creating VM(s) \n");
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1100_1110));
+    common_state!(applicable_op_ids, vm_states.r[13] = Some(0x0011_CCCC));
 
-    // ADD <Rd>,SP,#<imm8> T1 - Not applicable
+    common_state!(applicable_op_ids, vm_states.n = Some(true));
+    common_state!(applicable_op_ids, vm_states.z = Some(true));
+    common_state!(applicable_op_ids, vm_states.c = Some(true));
+    common_state!(applicable_op_ids, vm_states.v = Some(true));
 
-    // ADD SP,SP,#<imm7> T2
-    let mut vm_sp_imm_sp = create_vm_from_asm(
-        "
-        add  SP, SP,        #0x01FC
-        svc                 #0xFF
-    ",
-    );
+    // VM initialization
 
-    // ADD <Rdm>, SP, <Rdm> T1 - Not applicable
+    // 0: ADD <Rd>, SP, #<imm8> T1 - Not applicable
+    
+    // 1: ADD SP, SP, #<imm7> T2
+    create_vm!(vms, vm_states, 1, "ADD SP, SP, #0x01FC");
+    vm_states[1].r[13] = Some(0x0011_CEC8);
+    
+    // 2: ADD <Rdm>, SP, <Rdm> T1 - Not applicable
+    
+    // 3: ADD SP, <Rm> T2
+    create_vm!(vms, vm_states, 3, "ADD SP, r0");
+    vm_states[3].r[13] = Some(0x1111_DDDC);
 
-    // ADD SP,<Rm> T2
-    let mut vm_sp_reg_sp = create_vm_from_asm(
-        "
-        add  SP, r0
-        svc                 #0xFF
-    ",
-    );
-
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_sp_imm_sp);
-    load_into_vm!(vm_state, vm_sp_reg_sp);
-
-    // Expected state diff after execution
-    vm_state.r[13] = Some(0x01_01FC); // Lower 2 bits of SP are always 0
-
-    println!("\n>>> [1/2] Testing for op variant: ADD SP,SP,#<imm7> T2 \n");
-    execute_and_assert!(vm_state, vm_sp_imm_sp);
-
-    println!("\n>>> [2/2] Testing for op variant: ADD SP,<Rm> T2 \n");
-    execute_and_assert!(vm_state, vm_sp_reg_sp);
+    run_test!(vms, vm_states, applicable_op_ids);
 }
 
-// Do SP addition with register as destination + Preserve flags
+// SP addition with register as destination + Preserve flags
 #[test]
 pub fn test_add_sp_to_reg() {
-    println!("\n>>> Add sp ops test case: Do SP addition with SP as destination + Preserve flags \n");
+    println!("\n>>> Add sp ops test case: SP addition with SP as destination + Preserve flags \n");
 
-    let mut vm_state: VMState = Default::default();
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
-    // Initial state
-    vm_state.r[0] = Some(0x03FC);
-    vm_state.r[13] = Some(0x01_0000);
-    vm_state.n = Some(true);
-    vm_state.z = Some(true);
-    vm_state.c = Some(true);
-    vm_state.v = Some(true);
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![0, 2];
 
-    println!("\n>>> Creating VM(s) \n");
+    // Common pre-execution state
+    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1100_1110));
+    common_state!(applicable_op_ids, vm_states.r[13] = Some(0x0011_CCCC));
 
-    // ADD <Rd>, SP, #<imm8> T1
-    let mut vm_sp_imm_reg = create_vm_from_asm(
-        "
-        add  r0, SP,        #0x03FC
-        svc                 #0xFF
-    ",
-    );
+    common_state!(applicable_op_ids, vm_states.n = Some(true));
+    common_state!(applicable_op_ids, vm_states.z = Some(true));
+    common_state!(applicable_op_ids, vm_states.c = Some(true));
+    common_state!(applicable_op_ids, vm_states.v = Some(true));
 
-    // ADD SP, SP, #<imm7> T2 - Not applicable
+    // VM initialization
 
-    // ADD <Rdm>, SP, <Rdm> T1
-    let mut vm_sp_reg_reg = create_vm_from_asm(
-        "
-        add  r0, SP, r0
-        svc                 #0xFF
-    ",
-    );
+    // 0: ADD <Rd>, SP, #<imm8> T1
+    create_vm!(vms, vm_states, 0, "ADD r0, SP, #0x03FC");
+    vm_states[0].r[0] = Some(0x0011_D0C8);
+    
+    // 1: ADD SP, SP, #<imm7> T2 - Not applicable
+    
+    // 2: ADD <Rdm>, SP, <Rdm> T1
+    create_vm!(vms, vm_states, 2, "ADD r0, SP, r0");
+    vm_states[2].r[0] = Some(0x1111_DDDC);
+    
+    // 3: ADD SP, <Rm> T2 - Not applicable
 
-    // ADD SP,<Rm> T2 - Not applicable
-
-    println!("\n>>> Loading initial values into VM(s) \n");
-    print_vm_state!(vm_state);
-    load_into_vm!(vm_state, vm_sp_imm_reg);
-    load_into_vm!(vm_state, vm_sp_reg_reg);
-
-    // Expected state diff after execution
-    vm_state.r[0] = Some(0x01_03FC); // Lower 2 bits of SP are always 0
-
-    println!("\n>>> [1/2] Testing for op variant: ADD <Rd>, SP, #<imm8> T1 \n");
-    execute_and_assert!(vm_state, vm_sp_imm_reg);
-
-    println!("\n>>> [2/2] Testing for op variant: ADD <Rdm>, SP, <Rdm> T1 \n");
-    execute_and_assert!(vm_state, vm_sp_reg_reg);
+    run_test!(vms, vm_states, applicable_op_ids);
 }
