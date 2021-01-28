@@ -877,15 +877,20 @@ impl NarmVM{
     pub fn get_pc_address(&self) -> u32{
         self.pc & (!1)
     }
-    pub fn print_diagnostics(&self){
+    pub fn get_diagnostics_message(&self) -> String{
+        let mut msg = String::default();
         for i in 0..=15{
-            println!("r{}: {:#010x}", i, self.external_get_reg(i));
+            msg.push_str(&format!("r{}: {:#010x}\n", i, self.external_get_reg(i)));
         }
-        println!("z: {}", self.cpsr.z);
-        println!("n: {}", self.cpsr.n);
-        println!("c: {}", self.cpsr.c);
-        println!("v: {}", self.cpsr.v);
-        println!("gas remaining: {}", self.gas_remaining);
+        msg.push_str(&format!("z: {}\n", self.cpsr.z));
+        msg.push_str(&format!("n: {}\n", self.cpsr.n));
+        msg.push_str(&format!("c: {}\n", self.cpsr.c));
+        msg.push_str(&format!("v: {}\n", self.cpsr.v));
+        msg.push_str(&format!("gas remaining: {}\n", self.gas_remaining));
+        msg
+    }
+    pub fn print_diagnostics(&self){
+        println!("{}", self.get_diagnostics_message())
     }
     /// Helper function to simplify copying a set of data into VM memory
     pub fn copy_into_memory(&mut self, address: u32, data: &[u8]) -> Result<(), NarmError>{
