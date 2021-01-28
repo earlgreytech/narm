@@ -771,6 +771,13 @@ impl NarmVM{
                     let result = self.op_add(self.get_sp(), (imm as u32) << 2, false, false);
                     self.set_reg(&sp, result);
                     return Ok(0);
+                },
+                //0100_0111_1xxx_xxxx SUB sp-imm T1 noflags
+                0b1011_0000_1000_0000 => {
+                    let sp = LongRegister{ register: 13 };
+                    let result = self.op_add(self.get_sp(), !((imm as u32) << 2), true, false);
+                    self.set_reg(&sp, result);
+                    return Ok(0);
                 }
                 _ => {}
             }
