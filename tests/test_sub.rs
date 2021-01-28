@@ -17,7 +17,9 @@ SUBS <Rd>, <Rn>, #<imm3> T1     - Rd  <- Rn  - imm (+set all flags)
 SUBS <Rdn>, #<imm8> T2          - Rdn <- Rdn - imm (+set all flags)
 SUBS <Rd>, <Rn>, <Rm> T1        - Rd  <- Rn  - Rm (+set all flags)
 SBCS <Rdn>, <Rm> T1             - Rdn <- Rdn - Rm + Carry flag (+set all flags)
-RSBS <Rd>, <Rn>, #<imm0> T1     - Rd  <- 0   - Rn (+set all flags) - Negation
+RSBS <Rd>, <Rn>, #<imm0> T1     - Rd  <- 0   - Rn (+set all flags) (Negation)
+CMP <Rn>, #<imm8> T1            - _   <- Rn  - imm (+set all flags)
+CMP <Rn>, <Rm> T1               - _   <- Rn  - Rm (+set all flags)
 
 General test cases:
 
@@ -42,10 +44,12 @@ const OPCODES: &'static [&'static str] = &[
     "SUBS <Rd>, <Rn>, <Rm> T1",
     "SBCS <Rdn>, <Rm> T1",
     "RSBS <Rd>, <Rn>, #<imm0> T1",
+    "CMP <Rn>, #<imm8> T1",
+    "CMP <Rn>, <Rm> T1",
 ];
 
 // Simple constant for number of opcodes tested in this file
-const NUM_OPCODES: &'static usize = &5;
+const NUM_OPCODES: &'static usize = &7;
 
 // Calculate difference of two registers
 #[test]
@@ -79,6 +83,10 @@ pub fn test_sub_regsub() {
     vm_states[3].r[0] = Some(0x0101_2221);
 
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1 - Not applicable
+
+    // 5: CMP <Rn>, #<imm8> T1 - Not applicable
+
+    // 6: CMP <Rn>, <Rm> T1 - Not applicable
 
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.c = Some(true)); // Set *unless* there is unsigned overflow
@@ -121,6 +129,10 @@ pub fn test_sub_immsub() {
     vm_states[4].r[0] = Some(0xFFEF_AAAB);
     vm_states[4].n = Some(true);
 
+    // 5: CMP <Rn>, #<imm8> T1 - Not applicable
+
+    // 6: CMP <Rn>, <Rm> T1 - Not applicable
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.c = Some(true)); // Set *unless* there is unsigned overflow
 
@@ -141,7 +153,7 @@ pub fn test_sub_flag_neg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 3, 4];
+    let applicable_op_ids = vec![0, 1, 2, 3, 4, 5, 6];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x8642_3333));
@@ -175,6 +187,12 @@ pub fn test_sub_flag_neg() {
     create_vm!(vms, vm_states, 4, "rsbs r0, r2, #0x00");
     vm_states[4].r[0] = Some(0xFFFF_FFFA);
 
+    // 5: CMP <Rn>, #<imm8> T1
+    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+
+    // 6: CMP <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 6, "cmp r0, r2");
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.n = Some(true));
     common_state!(applicable_op_ids, vm_states.z = Some(false));
@@ -196,7 +214,7 @@ pub fn test_sub_flag_zero() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 3, 4];
+    let applicable_op_ids = vec![0, 1, 2, 3, 4, 5, 6];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFF));
@@ -226,8 +244,16 @@ pub fn test_sub_flag_zero() {
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1
     create_vm!(vms, vm_states, 4, "rsbs r0, r4, #0x00");
 
+    // 5: CMP <Rn>, #<imm8> T1
+    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+
+    // 6: CMP <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 6, "cmp r1, r2");
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x00));
+    vm_states[5].r[0] = None; // Op discards result anyway
+    vm_states[6].r[0] = None; // Op discards result anyway
 
     common_state!(applicable_op_ids, vm_states.n = Some(false));
     common_state!(applicable_op_ids, vm_states.z = Some(true));
@@ -250,7 +276,7 @@ pub fn test_sub_flag_carry() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 3, 4];
+    let applicable_op_ids = vec![0, 1, 2, 3, 4, 5, 6];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFE));
@@ -281,8 +307,16 @@ pub fn test_sub_flag_carry() {
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1
     create_vm!(vms, vm_states, 4, "rsbs r0, r4, #0x00");
 
+    // 5: CMP <Rn>, #<imm8> T1
+    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+
+    // 6: CMP <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 6, "cmp r0, r3");
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFFFF_FFFF)); // = -1
+    vm_states[5].r[0] = None; // Op discards result anyway
+    vm_states[6].r[0] = None; // Op discards result anyway
 
     common_state!(applicable_op_ids, vm_states.n = Some(true));
     common_state!(applicable_op_ids, vm_states.z = Some(false));
@@ -303,7 +337,7 @@ pub fn test_sub_flag_v() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 3];
+    let applicable_op_ids = vec![0, 1, 2, 3, 5, 6];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x8000_00FE));
@@ -334,14 +368,25 @@ pub fn test_sub_flag_v() {
     // It feels like, say 0 - 0x8000_000F *should* cause signed overflow, but doesn't due to how it's handled internally
     // ( -> 0 + bitwise_neg(0x8000_000F) = 0 + 7FFF_FFF0 -> no signed overflow
 
+    // 5: CMP <Rn>, #<imm8> T1
+    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+
+    // 6: CMP <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 6, "cmp r1, r2");
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x7FFF_FFFF));
     vm_states[4].r[0] = Some(0x8FFF_FFFA);
+    vm_states[5].r[0] = None; // Op discards result anyway
+    vm_states[6].r[0] = None; // Op discards result anyway
 
     common_state!(applicable_op_ids, vm_states.n = Some(false));
     common_state!(applicable_op_ids, vm_states.z = Some(false));
     common_state!(applicable_op_ids, vm_states.c = Some(true)); // Set *unless* there is unsigned overflow
     common_state!(applicable_op_ids, vm_states.v = Some(true));
+
+    vm_states[5].n = None; // Op discards result anyway
+    vm_states[6].n = None; // Op discards result anyway
 
     run_test!(vms, vm_states, applicable_op_ids);
 }

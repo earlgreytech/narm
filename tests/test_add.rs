@@ -15,6 +15,7 @@ ADDS <Rdn>, #<imm8> T2          - Rdn <- Rdn + imm (+set all flags)
 ADDS <Rd>, <Rn>, <Rm> T1        - Rd  <- Rn  + Rm (+set all flags)
 ADD <Rdn>, <Rm> T2              - Rdn <- Rdn + Rm (one or both should be high register)
 ADCS <Rdn>, <Rm> T1             - Rdn <- Rdn + Rm + Carry flag (+set all flags)
+CMN  <Rn>, <Rm> T1              - _   <- Rn  + Rm (+set all flags)
 
 General test cases:
 
@@ -43,10 +44,11 @@ const OPCODES: &'static [&'static str] = &[
     "ADDS <Rd>, <Rn>, <Rm> T1",
     "ADD <Rdn>, <Rm> T2",
     "ADCS <Rdn>, <Rm> T1",
+    "CMN <Rn>, <Rm> T1",
 ];
 
 // Simple constant for number of opcodes tested in this file
-const NUM_OPCODES: &'static usize = &5;
+const NUM_OPCODES: &'static usize = &6;
 
 // Calculate sum of two registers
 #[test]
@@ -84,6 +86,8 @@ pub fn test_add_regadd() {
     create_vm!(vms, vm_states, 4, "adcs  r0, r1");
     vm_states[4].r[0] = Some(0x0011_4444);
 
+    // 5: CMN <Rn>, <Rm> T1 - Not applicable
+
     run_test!(vms, vm_states, applicable_op_ids);
 }
 
@@ -119,6 +123,8 @@ pub fn test_add_immadd() {
 
     // 4: ADCS <Rdn>, <Rm> T1 - Not applicable
 
+    // 5: CMN <Rn>, <Rm> T1 - Not applicable
+
     run_test!(vms, vm_states, applicable_op_ids);
 }
 
@@ -134,7 +140,7 @@ pub fn test_add_flag_neg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4];
+    let applicable_op_ids = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x8001_1111));
@@ -166,6 +172,9 @@ pub fn test_add_flag_neg() {
     create_vm!(vms, vm_states, 4, "adcs  r0, r2"); // + 1 (Carry)
     vm_states[4].r[0] = Some(0x8101_6667);
 
+    // 5: CMN <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 5, "cmn r0, r2");
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.n = Some(true));
     common_state!(applicable_op_ids, vm_states.z = Some(false));
@@ -185,7 +194,7 @@ pub fn test_add_flag_zero() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4];
+    let applicable_op_ids = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFFFF_FF01));
@@ -214,8 +223,12 @@ pub fn test_add_flag_zero() {
     // 4: ADCS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "adcs  r0, r3");
 
+    // 5: CMN <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 5, "cmn r0, r3");
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x00));
+    vm_states[5].r[0] = None; // Op discards result anyway
 
     common_state!(applicable_op_ids, vm_states.n = Some(false));
     common_state!(applicable_op_ids, vm_states.z = Some(true));
@@ -235,7 +248,7 @@ pub fn test_add_flag_carry() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4];
+    let applicable_op_ids = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFFFF_FFFF));
@@ -267,6 +280,9 @@ pub fn test_add_flag_carry() {
     create_vm!(vms, vm_states, 4, "adcs  r0, r2");
     vm_states[4].r[0] = Some(0x05);
 
+    // 5: CMN <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 5, "cmn r0, r2");
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.n = Some(false));
     common_state!(applicable_op_ids, vm_states.z = Some(false));
@@ -286,7 +302,7 @@ pub fn test_add_flag_v() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4];
+    let applicable_op_ids = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x7FFF_FFFF));
@@ -317,6 +333,9 @@ pub fn test_add_flag_v() {
     // 4: ADCS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "adcs  r0, r2"); // +1 (carry)
     vm_states[4].r[0] = Some(0x8000_0006);
+
+    // 5: CMN <Rn>, <Rm> T1
+    create_vm!(vms, vm_states, 5, "cmn r0, r2");
 
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.n = Some(true)); // Causing sign overflow with add -> negative number
@@ -349,6 +368,7 @@ pub fn test_add_high_noflags() {
     vm_states[3].z = Some(true);
     vm_states[3].c = Some(true);
     vm_states[3].v = Some(true);
+
     create_vm!(vms, vm_states, 3, "add r8, r9");
     vm_states[3].r[8] = Some(0x1111_8888);
 
