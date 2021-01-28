@@ -1,3 +1,5 @@
+#![allow(dead_code)] // Stuff used only in/by the macros generate warnings otherwise
+
 extern crate elf;
 
 use narm::narmvm::*;
@@ -100,32 +102,19 @@ pub fn asm(input: &str) -> elf::File {
     elf::File::open_path(output).unwrap()
 }
 
-/*
-
---- VM state assertion infrastructure ---
-
-The VMState structure contains expected values for each registry and flag exposed by the VM
-By default everything is checked and expected to be 0/false, but tests can be altered or turned off individually
-
-Basic test format:
-
-    let mut vm = ...
-
-    ...
-
-    let mut vm_expected: VMState = Default::default(); <- Default is check all, 0 for regs and false (ie unset/0) for flags
-
-    vm_expected.r[0] = Some(0xAF); <- r0 should be this value
-    vm_expected.c = Some(true);             <- Carry flag should be true (ie set/1)
-    vm_expected.r[1] = None;                <- r1 won't be checked, any value will pass the test
-
-    assert_vm_eq!(vm_expected, vm);         <- Actually do the asserts
-
-*/
+/***************************************************************
+***                                                          ***
+***   VM state assertion infrastructure                      ***
+***                                                          ***
+***   Contains a structure holding a VM state,               ***
+***   where values can easily be set (or ignored).           ***
+***   Also contains macros to assert, load and print state   ***
+***                                                          ***
+***************************************************************/
 
 // TODO: Handle special registers differently?
 // TODO: Implement memory area assertion? Maybe too advanced?
-#[allow(dead_code)]
+#[derive(Copy, Clone)]
 pub struct VMState {
     pub r: [Option<u32>; 15], // Exclude PC for the time being
     pub n: Option<bool>,
@@ -163,17 +152,6 @@ impl Default for VMState {
         }
     }
 }
-
-// Format u32 to hex string approperiatly padded with zeroes for easy side-by-side comparison
-// TODO: Underscores?
-pub fn format_padded_hex(int: u32) -> String {
-    let mut string = String::from(format!("{:x}", int));
-    while string.len() < 8 {
-        string = format!("0{}", string)
-    }
-    string.to_uppercase()
-}
-
 // Macro to assert values in VMState struct against the actual VM's state
 // Includes a custom error message that formats register values to padded hex strings in addition to the default decimal print
 // This could be done as a function, but that would bloat a stack trace compared to an inlined macro.
@@ -183,34 +161,331 @@ macro_rules! assert_vm_eq {
         // Registers
         for i in 0..=14 {
             match ($vmstate.r[i]) {
-                Some(x) => assert_eq!(x, $vm.external_get_reg(i), "\n\nRegister r{}: Expected 0x{}, actually contained 0x{}\n\n", i, format_padded_hex(x), format_padded_hex($vm.external_get_reg(i))),
+                Some(x) => assert_eq!(x, $vm.external_get_reg(i), "\n\n>>> Register r{}: Expected 0x{}, actually contained 0x{}\n\n", i, format_padded_hex(x), format_padded_hex($vm.external_get_reg(i))),
                 None    => (),
             };
         }
         // Negative flag
         match ($vmstate.n) {
-            Some(x) => assert_eq!(x, $vm.cpsr.n, "\n\nCondition flag n (Negative): Expected {}, actually contained {}\n\n", x, $vm.cpsr.n),
+            Some(x) => assert_eq!(x, $vm.cpsr.n, "\n\n>>> Condition flag n (Negative): Expected {}, actually contained {}\n\n", x, $vm.cpsr.n),
             None    => (),
         };
         // Zero flag
         match ($vmstate.z) {
-            Some(x) => assert_eq!(x, $vm.cpsr.z, "\n\nCondition flag z (Zero): Expected {}, actually contained {}\n\n", x, $vm.cpsr.z),
+            Some(x) => assert_eq!(x, $vm.cpsr.z, "\n\n>>> Condition flag z (Zero): Expected {}, actually contained {}\n\n", x, $vm.cpsr.z),
             None    => (),
         };
         // Carry (Overflow) flag
         match ($vmstate.c) {
-            Some(x) => assert_eq!(x, $vm.cpsr.c, "\n\nCondition flag c (Carry/Unsigned Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.c),
+            Some(x) => assert_eq!(x, $vm.cpsr.c, "\n\n>>> Condition flag c (Carry/Unsigned Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.c),
             None    => (),
         };
         // V (Signed Overflow) flag
         match ($vmstate.v) {
-            Some(x) => assert_eq!(x, $vm.cpsr.v, "\n\nCondition flag v (Signed Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.v),
+            Some(x) => assert_eq!(x, $vm.cpsr.v, "\n\n>>> Condition flag v (Signed Overflow): Expected {}, actually contained {}\n\n", x, $vm.cpsr.v),
             None    => (),
         };
         // PC, program counter
         match ($vmstate.pc_address) {
-            Some(x) => assert_eq!(x, $vm.get_pc_address(), "\n\npc: Expected {}, actually contained {}\n\n", x, $vm.get_pc_address()),
+            Some(x) => assert_eq!(x, $vm.get_pc_address(), "\n\n>>> pc: Expected {}, actually contained {}\n\n", x, $vm.get_pc_address()),
             None    => (),
         };
+    };
+
+    ( $state:ident[$i_state:expr], $vm:ident[$i_vm:expr] ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($state[$i_state].r[i]) {
+                Some(x) => assert_eq!(x, $vm[$i_vm].external_get_reg(i), "\n\n>>> Register r{}: Expected 0x{}, actually contained 0x{}\n\n", i, format_padded_hex(x), format_padded_hex($vm[$i_vm].external_get_reg(i))),
+                None    => (),
+            };
+        }
+        // Negative flag
+        match ($state[$i_state].n) {
+            Some(x) => assert_eq!(x, $vm[$i_vm].cpsr.n, "\n\n>>> Condition flag n (Negative): Expected {}, actually contained {}\n\n", x, $vm[$i_vm].cpsr.n),
+            None    => (),
+        };
+        // Zero flag
+        match ($state[$i_state].z) {
+            Some(x) => assert_eq!(x, $vm[$i_vm].cpsr.z, "\n\n>>> Condition flag z (Zero): Expected {}, actually contained {}\n\n", x, $vm[$i_vm].cpsr.z),
+            None    => (),
+        };
+        // Carry (Overflow) flag
+        match ($state[$i_state].c) {
+            Some(x) => assert_eq!(x, $vm[$i_vm].cpsr.c, "\n\n>>> Condition flag c (Carry/Unsigned Overflow): Expected {}, actually contained {}\n\n", x, $vm[$i_vm].cpsr.c),
+            None    => (),
+        };
+        // V (Signed Overflow) flag
+        match ($state[$i_state].v) {
+            Some(x) => assert_eq!(x, $vm[$i_vm].cpsr.v, "\n\n>>> Condition flag v (Signed Overflow): Expected {}, actually contained {}\n\n", x, $vm[$i_vm].cpsr.v),
+            None    => (),
+        };
+        // PC, program counter
+        match ($state[$i_state].pc_address) {
+            Some(x) => assert_eq!(x, $vm[$i_vm].get_pc_address(), "\n\n>>> pc: Expected {}, actually contained {}\n\n", x, $vm[$i_vm].get_pc_address()),
+            None    => (),
+        };
+    };
+}
+
+// Macro to load values in VMState struct into the actual VM's state
+// This could be done as a function, but I made the assertion thing above a macro and now it's too late
+#[macro_export]
+macro_rules! load_into_vm {
+    ( $vmstate:ident, $vm:ident ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($vmstate.r[i]) {
+                Some(x) => $vm.external_set_reg(i, x),
+                None => (),
+            };
+        }
+        // Negative flag
+        match ($vmstate.n) {
+            Some(x) => $vm.cpsr.n = x,
+            None => (),
+        };
+        // Zero flag
+        match ($vmstate.z) {
+            Some(x) => $vm.cpsr.z = x,
+            None => (),
+        };
+        // Carry (Overflow) flag
+        match ($vmstate.c) {
+            Some(x) => $vm.cpsr.c = x,
+            None => (),
+        };
+        // V (Signed Overflow) flag
+        match ($vmstate.v) {
+            Some(x) => $vm.cpsr.v = x,
+            None => (),
+        };
+        // PC, program counter
+        match ($vmstate.pc_address) {
+            Some(x) => $vm.set_thumb_pc_address(x),
+            None => (),
+        };
+    };
+
+    ( $state:ident, $vm:ident, $index:expr ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($state[$index].r[i]) {
+                Some(x) => $vm[$index].external_set_reg(i, x),
+                None => (),
+            };
+        }
+        // Negative flag
+        match ($state[$index].n) {
+            Some(x) => $vm[$index].cpsr.n = x,
+            None => (),
+        };
+        // Zero flag
+        match ($state[$index].z) {
+            Some(x) => $vm[$index].cpsr.z = x,
+            None => (),
+        };
+        // Carry (Overflow) flag
+        match ($state[$index].c) {
+            Some(x) => $vm[$index].cpsr.c = x,
+            None => (),
+        };
+        // V (Signed Overflow) flag
+        match ($state[$index].v) {
+            Some(x) => $vm[$index].cpsr.v = x,
+            None => (),
+        };
+        // PC, program counter
+        match ($state[$index].pc_address) {
+            Some(x) => $vm[$index].set_thumb_pc_address(x),
+            None => (),
+        };
+    };
+}
+
+// Macro to print values in VMState struct for debug output
+// This could be done as a function, but I made the assertion thing above a macro and now it's too late
+#[macro_export]
+macro_rules! print_vm_state {
+    ( $vmstate:ident ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($vmstate.r[i]) {
+                Some(x) => println!("r{}: 0x{}", i, format_padded_hex(x)),
+                None => println!("r{}: (Ignored)", i),
+            };
+        }
+        // Negative flag
+        match ($vmstate.n) {
+            Some(x) => println!("n: {}", x),
+            None => println!("n: (Ignored)"),
+        };
+        // Zero flag
+        match ($vmstate.z) {
+            Some(x) => println!("z: {}", x),
+            None => println!("z: (Ignored)"),
+        };
+        // Carry (Overflow) flag
+        match ($vmstate.c) {
+            Some(x) => println!("c: {}", x),
+            None => println!("c: (Ignored)"),
+        };
+        // V (Signed Overflow) flag
+        match ($vmstate.v) {
+            Some(x) => println!("v: {}", x),
+            None => println!("v: (Ignored)"),
+        };
+        // PC, program counter
+        match ($vmstate.pc_address) {
+            Some(x) => println!("pc address: {}", format_padded_hex(x)),
+            None => println!("pc address: (Ignored)"),
+        };
+    };
+
+    ( $vmstate:ident[$index:expr] ) => {
+        // Registers
+        for i in 0..=14 {
+            match ($vmstate[$index].r[i]) {
+                Some(x) => println!("r{}: 0x{}", i, format_padded_hex(x)),
+                None => println!("r{}: (Ignored)", i),
+            };
+        }
+        // Negative flag
+        match ($vmstate[$index].n) {
+            Some(x) => println!("n: {}", x),
+            None => println!("n: (Ignored)"),
+        };
+        // Zero flag
+        match ($vmstate[$index].z) {
+            Some(x) => println!("z: {}", x),
+            None => println!("z: (Ignored)"),
+        };
+        // Carry (Overflow) flag
+        match ($vmstate[$index].c) {
+            Some(x) => println!("c: {}", x),
+            None => println!("c: (Ignored)"),
+        };
+        // V (Signed Overflow) flag
+        match ($vmstate[$index].v) {
+            Some(x) => println!("v: {}", x),
+            None => println!("v: (Ignored)"),
+        };
+        // PC, program counter
+        match ($vmstate[$index].pc_address) {
+            Some(x) => println!("pc address: {}", format_padded_hex(x)),
+            None => println!("pc address: (Ignored)"),
+        };
+    };
+}
+
+/***********************************************
+***                                          ***
+***   Misc supporting functions and macros   ***
+***                                          ***
+***********************************************/
+
+// Format u32 to hex string approperiatly padded with zeroes for easy side-by-side comparison
+// TODO: Underscores?
+// TODO: Replace with build-in functionality used in VM code?
+pub fn format_padded_hex(int: u32) -> String {
+    let mut string = String::from(format!("{:x}", int));
+    while string.len() < 8 {
+        string = format!("0{}", string)
+    }
+    string.to_uppercase()
+}
+
+// Macro to reduce boilerplate code when executing VM instance and asserting results
+#[macro_export]
+macro_rules! execute_and_assert {
+    ( $state:ident, $vm:ident ) => {
+        assert_eq!($vm.execute().unwrap(), 0xFF);
+        $vm.print_diagnostics();
+        assert_vm_eq!($state, $vm);
+    };
+
+    ( $state:ident, $vm:ident, $index:expr ) => {
+        assert_eq!($vm[$index].execute().unwrap(), 0xFF);
+        $vm[$index].print_diagnostics();
+        assert_vm_eq!($state[$index], $vm[$index]);
+    };
+}
+
+// Macro to reduce boilerplate code when creating a VM with a single op
+#[macro_export]
+macro_rules! create_vm {
+    ( $op:literal ) => {
+        create_vm_from_asm(&format!(
+            "
+                {}
+                svc                 #0xFF
+                ",
+            $op,
+        ));
+    };
+
+    ( $vms:ident, $states:ident, $index:expr, $op:literal ) => {
+        println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
+        println!(">>> Using initial state: \n");
+        print_vm_state!($states[$index]);
+        println!("\n>>> VM debug output: \n");
+        $vms[$index] = create_vm_from_asm(&format!(
+            "
+                {}
+                svc                 #0xFF
+                ",
+            $op,
+        ));
+        load_into_vm!($states, $vms, $index);
+    };
+}
+
+// Macro to reduce boilerplate code when creating a VM with a single op
+#[macro_export]
+macro_rules! run_test {
+    ( $vms:ident, $states:ident, $op_id_vec:ident ) => {
+        let op_count = $op_id_vec.len();
+        println!("\n>>> Running tests for {} op varieties \n", op_count);
+
+        let mut current_op;
+        for i in 0..op_count {
+            current_op = $op_id_vec[i];
+            println!(
+                "\n>>> [{}/{}] Testing for op variant: {} \n",
+                i + 1,
+                op_count,
+                OPCODES[current_op]
+            );
+            execute_and_assert!($states, $vms, current_op);
+        }
+    };
+}
+
+// Macro to reduce boilerplate code when altering all VM state structs in a test
+#[macro_export]
+macro_rules! common_state {
+    ( $op_id_vec:ident, $states:ident.r[$index:expr] = Some($value:expr) ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].r[$index] = Some($value);
+        }
+    };
+    ( $op_id_vec:ident, $states:ident.r[$index:expr] = None ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].r[$index] = None;
+        }
+    };
+    ( $op_id_vec:ident, $states:ident.$target:ident = Some($value:expr) ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].$target = Some($value);
+        }
+    };
+    ( $op_id_vec:ident, $states:ident.$target:ident = None ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].$target = None;
+        }
     };
 }

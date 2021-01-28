@@ -760,6 +760,28 @@ impl NarmVM{
                 _ => {}
             }
         }
+        //imm7
+        {
+            let op = opcode & !MASK_IMM7;
+            let imm = decode_imm7(opcode);
+            match op{
+                //0100_0111_0xxx_xxxx ADD sp+imm T2 noflags
+                0b1011_0000_0000_0000 => {
+                    let sp = LongRegister{ register: 13 };
+                    let result = self.op_add(self.get_sp(), (imm as u32) << 2, false, false);
+                    self.set_reg(&sp, result);
+                    return Ok(0);
+                },
+                //0100_0111_1xxx_xxxx SUB sp-imm T1 noflags
+                0b1011_0000_1000_0000 => {
+                    let sp = LongRegister{ register: 13 };
+                    let result = self.op_add(self.get_sp(), !((imm as u32) << 2), true, false);
+                    self.set_reg(&sp, result);
+                    return Ok(0);
+                }
+                _ => {}
+            }
+        }
 
 
         Err(NarmError::InvalidOpcode(opcode))
@@ -876,6 +898,17 @@ impl NarmVM{
     }
     pub fn get_pc_address(&self) -> u32{
         self.pc & (!1)
+    }
+    pub fn external_set_reg(&mut self, reg: usize, value: u32){
+        if reg < 8 {
+            self.sreg[reg] = value;
+        }
+        else if reg < 15 {
+            self.long_registers[reg - 8] = value;
+        }
+        else if reg == 15 {
+            self.pc = value;
+        }
     }
     pub fn get_diagnostics_message(&self) -> String{
         let mut msg = String::default();
