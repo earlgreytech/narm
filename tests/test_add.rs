@@ -68,19 +68,19 @@ pub fn test_add_regadd() {
 
     // VM initialization
 
-    // 0: ADDS <Rd>, <Rn>, #<imm3> - Not applicable
+    // 0: ADDS <Rd>, <Rn>, #<imm3> T1 - Not applicable
 
-    // 1: ADDS <Rdn>, #<imm8> - Not applicable
+    // 1: ADDS <Rdn>, #<imm8> T2 - Not applicable
 
-    // 2: ADDS <Rd>, <Rn>, <Rm>
+    // 2: ADDS <Rd>, <Rn>, <Rm> T1
     create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
     vm_states[2].r[0] = Some(0x0110_8888);
 
-    // 3: ADD <Rdn>, <Rm>
+    // 3: ADD <Rdn>, <Rm> T2
     create_vm!(vms, vm_states, 3, "add  r0, r8");
     vm_states[3].r[0] = Some(0x1001_8888);
 
-    // 4: ADCS <Rdn>, <Rm>
+    // 4: ADCS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "adcs  r0, r1");
     vm_states[4].r[0] = Some(0x0011_4444);
 
@@ -105,19 +105,19 @@ pub fn test_add_immadd() {
 
     // VM initialization
 
-    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    // 0: ADDS <Rd>, <Rn>, #<imm3> T1
     create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
     vm_states[0].r[0] = Some(0x1100_555C);
 
-    // 1: ADDS <Rdn>, #<imm8>
+    // 1: ADDS <Rdn>, #<imm8> T2
     create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
     vm_states[1].r[0] = Some(0x0011_3432);
 
-    // 2: ADDS <Rd>, <Rn>, <Rm> - Not applicable
+    // 2: ADDS <Rd>, <Rn>, <Rm> T1 - Not applicable
 
-    // 3: ADD <Rdn>, <Rm> - Not applicable
+    // 3: ADD <Rdn>, <Rm> T2 - Not applicable
 
-    // 4: ADCS <Rdn>, <Rm> - Not applicable
+    // 4: ADCS <Rdn>, <Rm> T1 - Not applicable
 
     run_test!(vms, vm_states, applicable_op_ids);
 }
@@ -148,21 +148,21 @@ pub fn test_add_flag_neg() {
 
     // VM initialization
 
-    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    // 0: ADDS <Rd>, <Rn>, #<imm3> T1
     create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
     vm_states[0].r[0] = Some(0x8010_333A);
 
-    // 1: ADDS <Rdn>, #<imm8>
+    // 1: ADDS <Rdn>, #<imm8> T2
     create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
     vm_states[1].r[0] = Some(0x8001_1210);
 
-    // 2: ADDS <Rd>, <Rn>, <Rm>
+    // 2: ADDS <Rd>, <Rn>, <Rm> T1
     create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
     vm_states[2].r[0] = Some(0x8110_8888);
 
-    // 3: ADD <Rdn>, <Rm> - Not applicable
+    // 3: ADD <Rdn>, <Rm> T2 - Not applicable
 
-    // 4: ADCS <Rdn>, <Rm>
+    // 4: ADCS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "adcs  r0, r2"); // + 1 (Carry)
     vm_states[4].r[0] = Some(0x8101_6667);
 
@@ -200,18 +200,18 @@ pub fn test_add_flag_zero() {
 
     // VM initialization
 
-    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    // 0: ADDS <Rd>, <Rn>, #<imm3> T1
     create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
 
-    // 1: ADDS <Rdn>, #<imm8>
+    // 1: ADDS <Rdn>, #<imm8> T2
     create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
 
-    // 2: ADDS <Rd>, <Rn>, <Rm>
+    // 2: ADDS <Rd>, <Rn>, <Rm> T1
     create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
 
-    // 3: ADD <Rdn>, <Rm> - Not applicable
+    // 3: ADD <Rdn>, <Rm> T2 - Not applicable
 
-    // 4: ADCS <Rdn>, <Rm>
+    // 4: ADCS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "adcs  r0, r3");
 
     // Common expected post-execution state
@@ -249,21 +249,21 @@ pub fn test_add_flag_carry() {
 
     // VM initialization
 
-    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    // 0: ADDS <Rd>, <Rn>, #<imm3> T1
     create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
     vm_states[0].r[0] = Some(0x06);
 
-    // 1: ADDS <Rdn>, #<imm8>
+    // 1: ADDS <Rdn>, #<imm8> T2
     create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
     vm_states[1].r[0] = Some(0xFE);
 
-    // 2: ADDS <Rd>, <Rn>, <Rm>
+    // 2: ADDS <Rd>, <Rn>, <Rm> T1
     create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
     vm_states[2].r[0] = Some(0x05);
 
-    // 3: ADD <Rdn>, <Rm> - Not applicable
+    // 3: ADD <Rdn>, <Rm> T2 - Not applicable
 
-    // 4: ADCS <Rdn>, <Rm>
+    // 4: ADCS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "adcs  r0, r2");
     vm_states[4].r[0] = Some(0x05);
 
@@ -300,21 +300,21 @@ pub fn test_add_flag_v() {
 
     // VM initialization
 
-    // 0: ADDS <Rd>, <Rn>, #<imm3>
+    // 0: ADDS <Rd>, <Rn>, #<imm3> T1
     create_vm!(vms, vm_states, 0, "adds r0, r1, #0x07");
     vm_states[0].r[0] = Some(0x8000_0006);
 
-    // 1: ADDS <Rdn>, #<imm8>
+    // 1: ADDS <Rdn>, #<imm8> T2
     create_vm!(vms, vm_states, 1, "adds r0, #0xFF");
     vm_states[1].r[0] = Some(0x8000_00FE);
 
-    // 2: ADDS <Rd>, <Rn>, <Rm>
+    // 2: ADDS <Rd>, <Rn>, <Rm> T1
     create_vm!(vms, vm_states, 2, "adds r0, r1, r2");
     vm_states[2].r[0] = Some(0x8000_0005);
 
-    // 3: ADD <Rdn>, <Rm> - Not applicable
+    // 3: ADD <Rdn>, <Rm> T2 - Not applicable
 
-    // 4: ADCS <Rdn>, <Rm>
+    // 4: ADCS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "adcs  r0, r2"); // +1 (carry)
     vm_states[4].r[0] = Some(0x8000_0006);
 
@@ -341,7 +341,7 @@ pub fn test_add_high_noflags() {
 
     // VM initialization
 
-    // 3: ADD <Rdn>, <Rm>
+    // 3: ADD <Rdn>, <Rm> T2
     vm_states[3].r[8] = Some(0x0011_3333);
     vm_states[3].r[9] = Some(0x1100_5555);
 
