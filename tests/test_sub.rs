@@ -6,7 +6,7 @@ use narm::narmvm::*;
 
 /*
 
-Unit test for Sub operators
+Integration tests for Sub operators
 
 Note that ARM uses inverted carry flag for subtractions, so c flag is always set *unless* there is a signed overflow
 This is a computational simplification related to 2-complement representation that allows it to use the exact same arithmetics as addition
@@ -25,10 +25,10 @@ General test cases:
 
 - Calculate difference of two registers
 - Calculate difference of a register and an immediate value
-- Set Negative flag when result is negative + clear other flags
-- Set Zero flag when result is zero + clear other flags
-- Clear Carry flag when subtraction cause unsigned overflow + clear other flags
-- Set V flag when subtraction cause signed overflow + clear other flags
+- Set Negative flag when result is negative
+- Set Zero flag when result is zero
+- Clear Carry flag when subtraction cause unsigned overflow
+- Set V flag when subtraction cause signed overflow
 
 (Behavior for SBCS + carry flag is implicitly tested in the common tests)
 

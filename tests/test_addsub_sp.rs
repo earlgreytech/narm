@@ -6,7 +6,7 @@ use narm::narmvm::*;
 
 /*
 
-Unit test for ADD/SUB operators using the SP
+Integration tests for ADD/SUB operators using the SP
 
 Note that since the SP is aligned by 4 the following applies:
 - When adding/diffing with register the lowest 2 bits are ignored/zeroed

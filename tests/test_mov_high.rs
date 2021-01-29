@@ -5,7 +5,7 @@ use common::*;
 
 /*
 
-Special unit test for MOV on at least one high register
+Special integration tests for MOV on at least one high register
 TODO: Merge with tests for other MOV/S varieties when those are written
 
 Included cases:
