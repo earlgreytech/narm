@@ -17,6 +17,8 @@ ADD <Rdn>, <Rm> T2              - Rdn <- Rdn + Rm (one or both should be high re
 ADCS <Rdn>, <Rm> T1             - Rdn <- Rdn + Rm + Carry flag (+set all flags)
 CMN  <Rn>, <Rm> T1              - _   <- Rn  + Rm (+set all flags)
 
+TODO: ADD using PC and ADR op should reasonably be tested together with other branching ops
+
 General test cases:
 
 - Calculate sum of two registers

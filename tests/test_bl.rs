@@ -3,6 +3,9 @@ mod common;
 
 use common::*;
 
+// TODO: Pair this test with other branch operators
+// TODO: Proper format
+
 //this will test small nearby jumps using bl
 #[test]
 pub fn test_bl_small_jump() {

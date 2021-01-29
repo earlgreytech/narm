@@ -428,7 +428,7 @@ macro_rules! create_vm {
         ));
         load_into_vm!($states, $vms, $index);
     };
-    ( $vms:ident, $states:ident, $index:expr, $ops:literal, multiline = true ) => {
+    ( $vms:ident, $states:ident, $index:expr, multiline = true, $ops:literal ) => {
         println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
         print_vm_state!($states[$index]);

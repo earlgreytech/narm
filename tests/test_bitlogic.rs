@@ -64,7 +64,7 @@ pub fn test_bitlogic_result() {
     // 0: ANDS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 0, "ands r0, r1");
     vm_states[0].r[0] = Some(0x0000_0101);
-    
+
     // 1: TST <Rn>, <Rm> T1 - Not applicable
 
     // 2: BICS <Rdn>, <Rm> T1"
@@ -99,7 +99,7 @@ pub fn test_bitlogic_flag_neg() {
     common_state!(applicable_op_ids, vm_states.r[1] = Some(0x8010_0000));
     common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0100_0000));
     common_state!(applicable_op_ids, vm_states.r[3] = Some(0xFFFF_FFFF));
-    
+
     common_state!(applicable_op_ids, vm_states.n = Some(false));
     common_state!(applicable_op_ids, vm_states.z = Some(true));
     common_state!(applicable_op_ids, vm_states.c = Some(true)); // Shouldn't be affected at all
@@ -125,7 +125,7 @@ pub fn test_bitlogic_flag_neg() {
     // 4: EORS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "eors r0, r2");
     vm_states[4].r[0] = Some(0x8101_0000);
-    
+
     common_state!(applicable_op_ids, vm_states.n = Some(true));
     common_state!(applicable_op_ids, vm_states.z = Some(false));
 
@@ -148,7 +148,7 @@ pub fn test_bitlogic_flag_zero() {
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1010_1010));
     common_state!(applicable_op_ids, vm_states.r[1] = Some(0x0101_0101));
     common_state!(applicable_op_ids, vm_states.r[2] = Some(0x00));
-    
+
     common_state!(applicable_op_ids, vm_states.n = Some(true));
     common_state!(applicable_op_ids, vm_states.z = Some(false));
     common_state!(applicable_op_ids, vm_states.c = Some(true)); // Shouldn't be affected at all
@@ -173,7 +173,7 @@ pub fn test_bitlogic_flag_zero() {
     // 4: EORS <Rdn>, <Rm> T1
     create_vm!(vms, vm_states, 4, "eors r0, r0");
     vm_states[4].r[0] = Some(0x00);
-    
+
     common_state!(applicable_op_ids, vm_states.n = Some(false));
     common_state!(applicable_op_ids, vm_states.z = Some(true));
 
