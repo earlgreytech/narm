@@ -414,16 +414,6 @@ macro_rules! execute_and_assert {
 // Macro to reduce boilerplate code when creating a VM with a single op
 #[macro_export]
 macro_rules! create_vm {
-    ( $op:literal ) => {
-        create_vm_from_asm(&format!(
-            "
-                {}
-                svc                 #0xFF
-                ",
-            $op,
-        ));
-    };
-
     ( $vms:ident, $states:ident, $index:expr, $op:literal ) => {
         println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
@@ -436,6 +426,14 @@ macro_rules! create_vm {
                 ",
             $op,
         ));
+        load_into_vm!($states, $vms, $index);
+    };
+    ( $vms:ident, $states:ident, $index:expr, multiline = true, $ops:literal ) => {
+        println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
+        println!(">>> Using initial state: \n");
+        print_vm_state!($states[$index]);
+        println!("\n>>> VM debug output: \n");
+        $vms[$index] = create_vm_from_asm($ops);
         load_into_vm!($states, $vms, $index);
     };
 }

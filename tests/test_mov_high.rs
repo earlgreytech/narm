@@ -2,16 +2,20 @@ extern crate narm;
 mod common;
 
 use common::*;
+use narm::narmvm::*;
 
 /*
 
-Special unit test for MOV on at least one high register
+Special integration tests for MOV on at least one high register
 TODO: Merge with tests for other MOV/S varieties when those are written
+
+Included varieties:
+
+MOV <Rd>, <Rm> T1       - Rd  <- <Rm>
 
 Included cases:
 
 - Cause a predictable branch when value is moved to PC
-- Correctly move values between two high registers
 
 TODO: Check alignment for value moved to SP?
 TODO: Check if using with SP/PC works to spec?
@@ -23,19 +27,32 @@ TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
 */
 
-// Test if operation causes a predictable branch when value is moved to PC
+// String representation of ops for use in debug output
+const OPCODES: &'static [&'static str] = &["MOV <Rd>, <Rm> T1"];
+
+// Simple constant for number of opcodes tested in this file
+const NUM_OPCODES: &'static usize = &6;
+
+// Cause a predictable branch when value is moved to PC
 #[test]
 pub fn test_mov_pc() {
-    /*
-        mov  r0  <- r15     // Move PC into r0, we will jump with this op as reference
-        adds r0  <- #0x0A   // Since instructions are 2 byte, this represent a 5 op forward jump
-        mov  r15 <- r0      // Move r0 back to PC. Since we're already 2 op ahead of reference we'll jump 3 ops forward
-        movs r1  <- #0xFF   // Skipped
-        movs r2  <- #0xFF   // Skipped
-        movs r3  <- #0xFF   // This is where the jump takes us!
-        ...
-    */
-    let mut vm = create_vm_from_asm(
+    println!("\n>>> Mov ops test case: Cause a predictable branch when value is moved to PC \n");
+
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
+
+    // Tell macros which op varieties are tested in this function
+    let applicable_op_ids = vec![0];
+
+    // VM initialization
+
+    // 0: MOV <Rd>, <Rm> T1
+    create_vm!(
+        vms,
+        vm_states,
+        0,
+        multiline = true,
         "
         mov  r0, r15
         adds r0,            #0x0A
@@ -44,47 +61,15 @@ pub fn test_mov_pc() {
         movs r2,            #0xFF
         movs r3,            #0xFF
         movs r4,            #0xFF
-        movs r5,            #0xFF
         svc                 #0xFF
-    ",
-    );
-    //vm.cycle().unwrap(); // Step 1 instruction to set last_pc
-    //vm.set_pc(vm.get_last_pc)
-    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
-    vm.print_diagnostics();
-    let mut vm_expected: VMState = Default::default();
-
-    vm_expected.r[0] = None;
-    //vm_expected.r[1] = Some(0xFF); //Skipped, will still be 0
-    //vm_expected.r[2] = Some(0xFF); //Skipped, will still be 0
-    vm_expected.r[3] = Some(0xFF);
-    vm_expected.r[4] = Some(0xFF);
-    vm_expected.r[5] = Some(0xFF);
-
-    assert_vm_eq!(vm_expected, vm);
-}
-
-// Test if operation correctly moves values between two high registers
-#[test]
-pub fn test_mov_between_high() {
-    let mut vm = create_vm_from_asm(
         "
-        movs r0,            #0x0A
-        mov  r8, r0
-        mov  r9, r8
-        mov  r1, r9
-        svc                 #0xFF
-    ",
     );
 
-    assert_eq!(vm.execute().unwrap(), 0x0000_00FF);
-    vm.print_diagnostics();
-    let mut vm_expected: VMState = Default::default();
+    vm_states[0].r[0] = Some(0x0001_000B);
+    vm_states[0].r[1] = Some(0x00); // Skipped by branching
+    vm_states[0].r[2] = Some(0x00); // Skipped by branching
+    vm_states[0].r[3] = Some(0xFF);
+    vm_states[0].r[4] = Some(0xFF);
 
-    vm_expected.r[0] = Some(0x0A);
-    vm_expected.r[1] = Some(0x0A);
-    vm_expected.r[8] = Some(0x0A);
-    vm_expected.r[9] = Some(0x0A);
-
-    assert_vm_eq!(vm_expected, vm);
+    run_test!(vms, vm_states, applicable_op_ids);
 }

@@ -6,7 +6,7 @@ use narm::narmvm::*;
 
 /*
 
-Unit test for Add operators
+Integration tests for Add operators
 
 Included varieties:
 
@@ -17,14 +17,16 @@ ADD <Rdn>, <Rm> T2              - Rdn <- Rdn + Rm (one or both should be high re
 ADCS <Rdn>, <Rm> T1             - Rdn <- Rdn + Rm + Carry flag (+set all flags)
 CMN  <Rn>, <Rm> T1              - _   <- Rn  + Rm (+set all flags)
 
+TODO: ADD using PC and ADR op should reasonably be tested together with other branching ops
+
 General test cases:
 
 - Calculate sum of two registers
 - Calculate sum of a register and an immediate value
-- Set Negative flag when result is negative + clear other flags
-- Set Zero flag when result is zero + clear other flags
-- Set Carry flag when addition cause unsigned overflow + clear other flags
-- Set V flag when addition cause signed overflow + clear other flags
+- Set Negative flag when result is negative
+- Set Zero flag when result is zero
+- Set Carry flag when addition cause unsigned overflow
+- Set V flag when addition cause signed overflow
 
 Special test case for ADD <Rdn>, <Rm>:
 
