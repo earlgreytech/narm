@@ -6,6 +6,12 @@ use narm::narmvm::*;
 
 const DEFAULT_GAS: u64 = 10000;
 
+// These constant make addresses to asm code in testing less magic-number-y
+pub const ASM_ENTRY: u32 = 0x01_0000; 
+pub const THUMBS_MODE: u32 = 0x01;     
+pub const OP_SIZE: u32 = 0x02;              
+pub const OP_SIZE_32BIT: u32 = 0x04;        
+
 #[cfg(test)]
 pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     let file = asm(assembly_code);
@@ -17,7 +23,7 @@ pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     let mut vm = NarmVM::default();
     vm.memory.add_memory(0x01_0000, 0x01_0000).unwrap();
     vm.copy_into_memory(0x01_0000, &text_scn.data).unwrap();
-    vm.set_thumb_pc_address(0x01_0000);
+    vm.set_thumb_pc_address(ASM_ENTRY);
     vm.gas_remaining = DEFAULT_GAS;
     vm
 }
