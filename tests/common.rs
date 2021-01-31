@@ -525,6 +525,12 @@ macro_rules! common_state {
             $states[i].r[$index] = Some($value);
         }
     };
+    ( $op_id_vec:ident, $states:ident.r[$index:expr] = $value:expr ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].r[$index] = $value;
+        }
+    };
     ( $op_id_vec:ident, $states:ident.r[$index:expr] = None ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
@@ -535,6 +541,12 @@ macro_rules! common_state {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].$target = Some($value);
+        }
+    };
+    ( $op_id_vec:ident, $states:ident.$target:ident = $value:expr ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].$target = $value;
         }
     };
     ( $op_id_vec:ident, $states:ident.$target:ident = None ) => {
