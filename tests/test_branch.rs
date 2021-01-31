@@ -14,7 +14,7 @@ B <label> T2            - Branch unconditionally by label, jump size restricted 
 B<cond> <label> T1      - Branch conditionally by label, jump size restricted to signed 8 bits
 BX <Rm> T1              - Branch by register
 BL <label T1            - Branch by label, set link register, jump size restricted to even signed 25 bits (?????)
-BLX <Rm> T1             - Branch by register, set link register 
+BLX <Rm> T1             - Branch by register, set link register
 
 General test cases:
 
@@ -59,21 +59,23 @@ pub fn test_branch_forward() {
     let applicable_op_ids = vec![0, 1, 2, 3, 4];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(ASM_ENTRY + 2*OP_SIZE + THUMBS_MODE));
+    common_state!(
+        applicable_op_ids,
+        vm_states.r[1] = Some(ASM_ENTRY + 2 * OP_SIZE + THUMBS_MODE)
+    );
 
     // VM initialization
-    let post_ops = 
-        "
+    let post_ops = "
         svc             #0x01
         test1:
         movs r0,        #0xCD
         svc             #0xFF
         ";
 
-    // 0: B <label> T2" 
+    // 0: B <label> T2"
     let ops0 = format!("b test1 {}", post_ops);
     create_vm!(vms, vm_states, 0, code_var = true, ops0);
-    
+
     // 1: B<cond> <label> T1 (BNE -> if flag Z = 0)
     let ops1 = format!("bne test1 {}", post_ops);
     create_vm!(vms, vm_states, 1, code_var = true, ops1);
@@ -91,7 +93,7 @@ pub fn test_branch_forward() {
     let ops4 = format!("blx r1 {}", post_ops);
     create_vm!(vms, vm_states, 4, code_var = true, ops4);
     vm_states[4].r[14] = Some(ASM_ENTRY + OP_SIZE + THUMBS_MODE);
-    
+
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xCD));
 
@@ -109,7 +111,11 @@ pub fn test_bl_small_jump() {
 
     // Tell macros which op varieties are tested in this function
     let applicable_op_ids = vec![3];
-    create_vm!(vms, vm_states, 3, multiline = true, 
+    create_vm!(
+        vms,
+        vm_states,
+        3,
+        multiline = true,
         "
         bl test1
         svc             #0x01
@@ -136,7 +142,11 @@ pub fn test_bl_big_jump() {
 
     // Tell macros which op varieties are tested in this function
     let applicable_op_ids = vec![3];
-    create_vm!(vms, vm_states, 3, multiline = true, 
+    create_vm!(
+        vms,
+        vm_states,
+        3,
+        multiline = true,
         "
         bl              #0xF0020
         svc             #0x01
@@ -161,7 +171,11 @@ pub fn test_bl_backward_jump() {
 
     // Tell macros which op varieties are tested in this function
     let applicable_op_ids = vec![3];
-    create_vm!(vms, vm_states, 3, multiline = true, 
+    create_vm!(
+        vms,
+        vm_states,
+        3,
+        multiline = true,
         "
         bl              #0x50
         svc             #0x01

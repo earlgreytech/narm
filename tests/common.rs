@@ -7,10 +7,10 @@ use narm::narmvm::*;
 const DEFAULT_GAS: u64 = 10000;
 
 // These constant make addresses to asm code in testing less magic-number-y
-pub const ASM_ENTRY: u32 = 0x01_0000; 
-pub const THUMBS_MODE: u32 = 0x01;     
-pub const OP_SIZE: u32 = 0x02;              
-pub const OP_SIZE_32BIT: u32 = 0x04;        
+pub const ASM_ENTRY: u32 = 0x01_0000;
+pub const THUMBS_MODE: u32 = 0x01;
+pub const OP_SIZE: u32 = 0x02;
+pub const OP_SIZE_32BIT: u32 = 0x04;
 
 #[cfg(test)]
 pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
@@ -129,7 +129,7 @@ pub struct VMState {
     pub v: Option<bool>,
     pub pc_address: Option<u32>,
     pub expect_exec_error: bool, // TODO: Allow asserting specific error???
-    pub svc_param: u32, 
+    pub svc_param: u32,
 }
 
 impl Default for VMState {
@@ -386,9 +386,15 @@ macro_rules! print_vm_state {
             None => println!("pc address: (Ignored)"),
         };
         // Expect execution error?
-        println!("expect execution error: {}", $vmstate[$index].expect_exec_error);
+        println!(
+            "expect execution error: {}",
+            $vmstate[$index].expect_exec_error
+        );
         // Expected svc parameter
-        println!("svc parameter: {}", format_padded_hex($vmstate[$index].svc_param));
+        println!(
+            "svc parameter: {}",
+            format_padded_hex($vmstate[$index].svc_param)
+        );
     };
 }
 
@@ -415,11 +421,19 @@ pub fn format_padded_hex(int: u32) -> String {
 macro_rules! execute_and_assert {
     ( $state:ident, $vm:ident ) => {
         if $state.expect_exec_error {
-            assert!($vm.execute().is_err(), "\n\n>>> Execution: Expected error, got none \n\n");
-        }
-        else {
+            assert!(
+                $vm.execute().is_err(),
+                "\n\n>>> Execution: Expected error, got none \n\n"
+            );
+        } else {
             let svc_param = $vm.execute().unwrap();
-            assert_eq!(svc_param, $state.svc_param, "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n", format_padded_hex($state.svc_param), format_padded_hex(svc_param));
+            assert_eq!(
+                svc_param,
+                $state.svc_param,
+                "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n",
+                format_padded_hex($state.svc_param),
+                format_padded_hex(svc_param)
+            );
         }
         $vm.print_diagnostics();
         assert_vm_eq!($state, $vm);
@@ -427,11 +441,19 @@ macro_rules! execute_and_assert {
 
     ( $state:ident, $vm:ident, $index:expr ) => {
         if $state[$index].expect_exec_error {
-            assert!($vm[$index].execute().is_err(), "\n\n>>> Execution: Expected error, got none \n\n");
-        }
-        else {
+            assert!(
+                $vm[$index].execute().is_err(),
+                "\n\n>>> Execution: Expected error, got none \n\n"
+            );
+        } else {
             let svc_param = $vm[$index].execute().unwrap();
-            assert_eq!(svc_param , $state[$index].svc_param, "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n", format_padded_hex($state[$index].svc_param), format_padded_hex(svc_param));
+            assert_eq!(
+                svc_param,
+                $state[$index].svc_param,
+                "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n",
+                format_padded_hex($state[$index].svc_param),
+                format_padded_hex(svc_param)
+            );
         }
         $vm[$index].print_diagnostics();
         assert_vm_eq!($state[$index], $vm[$index]);
