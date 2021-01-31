@@ -122,6 +122,8 @@ pub struct VMState {
     pub c: Option<bool>,
     pub v: Option<bool>,
     pub pc_address: Option<u32>,
+    pub expect_exec_error: bool, // TODO: Allow asserting specific error???
+    pub svc_param: u32, 
 }
 
 impl Default for VMState {
@@ -149,6 +151,8 @@ impl Default for VMState {
             c: Some(false),
             v: Some(false),
             pc_address: None, //ignore pc normally
+            expect_exec_error: false,
+            svc_param: 0xFF,
         }
     }
 }
@@ -375,6 +379,10 @@ macro_rules! print_vm_state {
             Some(x) => println!("pc address: {}", format_padded_hex(x)),
             None => println!("pc address: (Ignored)"),
         };
+        // Expect execution error?
+        println!("expect execution error: {}", $vmstate[$index].expect_exec_error);
+        // Expected svc parameter
+        println!("svc parameter: {}", format_padded_hex($vmstate[$index].svc_param));
     };
 }
 
@@ -386,7 +394,7 @@ macro_rules! print_vm_state {
 
 // Format u32 to hex string approperiatly padded with zeroes for easy side-by-side comparison
 // TODO: Underscores?
-// TODO: Replace with build-in functionality used in VM code?
+// TODO: Replace with build-in formatting macro params used in VM diagnostics print code?
 pub fn format_padded_hex(int: u32) -> String {
     let mut string = String::from(format!("{:x}", int));
     while string.len() < 8 {
@@ -396,16 +404,29 @@ pub fn format_padded_hex(int: u32) -> String {
 }
 
 // Macro to reduce boilerplate code when executing VM instance and asserting results
+// Note: If you're using stepping without SVC op to execute VM you can't use this macro
 #[macro_export]
 macro_rules! execute_and_assert {
     ( $state:ident, $vm:ident ) => {
-        assert_eq!($vm.execute().unwrap(), 0xFF);
+        if $state.expect_exec_error {
+            assert!($vm.execute().is_err(), "\n\n>>> Execution: Expected error, got none \n\n");
+        }
+        else {
+            let svc_param = $vm.execute().unwrap();
+            assert_eq!(svc_param, $state.svc_param, "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n", format_padded_hex($state.svc_param), format_padded_hex(svc_param));
+        }
         $vm.print_diagnostics();
         assert_vm_eq!($state, $vm);
     };
 
     ( $state:ident, $vm:ident, $index:expr ) => {
-        assert_eq!($vm[$index].execute().unwrap(), 0xFF);
+        if $state[$index].expect_exec_error {
+            assert!($vm[$index].execute().is_err(), "\n\n>>> Execution: Expected error, got none \n\n");
+        }
+        else {
+            let svc_param = $vm[$index].execute().unwrap();
+            assert_eq!(svc_param , $state[$index].svc_param, "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n", format_padded_hex($state[$index].svc_param), format_padded_hex(svc_param));
+        }
         $vm[$index].print_diagnostics();
         assert_vm_eq!($state[$index], $vm[$index]);
     };
@@ -434,6 +455,14 @@ macro_rules! create_vm {
         print_vm_state!($states[$index]);
         println!("\n>>> VM debug output: \n");
         $vms[$index] = create_vm_from_asm($ops);
+        load_into_vm!($states, $vms, $index);
+    };
+    ( $vms:ident, $states:ident, $index:expr, code_var = true, $ops_str:ident ) => {
+        println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
+        println!(">>> Using initial state: \n");
+        print_vm_state!($states[$index]);
+        println!("\n>>> VM debug output: \n");
+        $vms[$index] = create_vm_from_asm(&$ops_str);
         load_into_vm!($states, $vms, $index);
     };
 }
