@@ -14,11 +14,8 @@ pub fn test_cycle() {
     );
     vm.cycle().unwrap();
     vm.print_diagnostics();
-    let mut vm_expected: VMState = Default::default();
 
-    vm_expected.r[0] = Some(0xF1);
-
-    assert_vm_eq!(vm_expected, vm);
+    assert_eq!(0xF1, vm.external_get_reg(0));
 }
 
 #[test]
@@ -31,9 +28,6 @@ pub fn test_execute() {
     );
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    let mut vm_expected: VMState = Default::default();
 
-    vm_expected.r[0] = Some(0xF1);
-
-    assert_vm_eq!(vm_expected, vm);
+    assert_eq!(0xF1, vm.external_get_reg(0));
 }
