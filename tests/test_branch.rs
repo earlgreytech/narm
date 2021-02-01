@@ -6,7 +6,7 @@ use narm::narmvm::*;
 
 /*
 
-Unit test for Branch operators
+Integration test for Branch operators
 
 Included varieties:
 
