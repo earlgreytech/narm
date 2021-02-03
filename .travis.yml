@@ -5,7 +5,7 @@ rust:
   - nightly
 before_install:
   - sudo apt-get update
-  - sudo apt-get -y install arm-none-eabi-gcc
+  - sudo apt-get -y install gcc-arm-none-eabi
 jobs:
   allow_failures:
     - rust: nightly
