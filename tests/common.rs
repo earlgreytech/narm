@@ -415,6 +415,19 @@ pub fn format_padded_hex(int: u32) -> String {
     string.to_uppercase()
 }
 
+// Functions to easily and clearly define memory addresses
+pub fn any_mem_address(base: u32, offset: u32) -> u32 {
+    return base + offset;
+}
+
+pub fn code_mem_address(offset: u32) -> u32 {
+    return ASM_ENTRY + offset + THUMBS_MODE;
+}
+
+pub fn mut_mem_address(offset: u32) -> u32 {
+    return 0x8000_0000 + offset;
+}
+
 // Macro to reduce boilerplate code when executing VM instance and asserting results
 // Note: If you're using stepping without SVC op to execute VM you can't use this macro
 #[macro_export]

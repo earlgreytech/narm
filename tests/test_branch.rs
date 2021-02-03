@@ -63,7 +63,7 @@ pub fn test_branch_forward() {
     // Common pre-execution state
     common_state!(
         applicable_op_ids,
-        vm_states.r[1] = Some(ASM_ENTRY + 2 * OP_SIZE + THUMBS_MODE)
+        vm_states.r[1] = Some(code_mem_address(2 * OP_SIZE))
     );
 
     // VM initialization
@@ -89,12 +89,12 @@ pub fn test_branch_forward() {
     // 3: BL <label> T1 32bit
     let ops3 = format!("bl test1 {}", post_ops);
     create_vm!(vms, vm_states, 3, code_var = true, ops3);
-    vm_states[3].r[14] = Some(ASM_ENTRY + OP_SIZE_32BIT + THUMBS_MODE); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     let ops4 = format!("blx r1 {}", post_ops);
     create_vm!(vms, vm_states, 4, code_var = true, ops4);
-    vm_states[4].r[14] = Some(ASM_ENTRY + OP_SIZE + THUMBS_MODE); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xCD));
@@ -117,11 +117,11 @@ pub fn test_branch_backward() {
     // Common pre-execution state
     common_state!(
         applicable_op_ids,
-        vm_states.r[1] = Some(ASM_ENTRY + THUMBS_MODE)
+        vm_states.r[1] = Some(code_mem_address(0))
     );
     common_state!(
         applicable_op_ids,
-        vm_states.pc_address = Some(ASM_ENTRY + 2 * OP_SIZE + THUMBS_MODE)
+        vm_states.pc_address = Some(code_mem_address(2 * OP_SIZE))
     );
 
     // VM initialization
@@ -151,12 +151,12 @@ pub fn test_branch_backward() {
     // 3: BL <label> T1 32bit
     let ops3 = format!("{}bl test1 {}", pre_ops, post_ops);
     create_vm!(vms, vm_states, 3, code_var = true, ops3);
-    vm_states[3].r[14] = Some(ASM_ENTRY + OP_SIZE_32BIT + OP_SIZE * 2 + THUMBS_MODE); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT + OP_SIZE * 2)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     let ops4 = format!("{}blx r1 {}", pre_ops, post_ops);
     create_vm!(vms, vm_states, 4, code_var = true, ops4);
-    vm_states[4].r[14] = Some(ASM_ENTRY + 3 * OP_SIZE + THUMBS_MODE); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     // Common expected post-execution state
     common_state!(applicable_op_ids, vm_states.r[0] = Some(0xCD));
@@ -180,7 +180,7 @@ pub fn test_branch_far_forward() {
     // Common pre-execution state
     common_state!(
         applicable_op_ids,
-        vm_states.r[1] = Some(ASM_ENTRY + 100000 * OP_SIZE + THUMBS_MODE) // 0x
+        vm_states.r[1] = Some(code_mem_address(100000 * OP_SIZE)) // 0x
     );
     common_state!(applicable_op_ids, vm_states.expect_exec_error = true);
 
@@ -195,11 +195,11 @@ pub fn test_branch_far_forward() {
 
     // 3: BL <label> T1 32bit
     create_vm!(vms, vm_states, 3, "bl #0xF0001");
-    vm_states[3].r[14] = Some(ASM_ENTRY + OP_SIZE_32BIT + THUMBS_MODE); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     create_vm!(vms, vm_states, 4, "blx r1");
-    vm_states[4].r[14] = Some(ASM_ENTRY + OP_SIZE + THUMBS_MODE); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     run_test!(vms, vm_states, applicable_op_ids);
 }
@@ -231,11 +231,11 @@ pub fn test_branch_far_backward() {
 
     // 3: BL <label> T1 32bit
     create_vm!(vms, vm_states, 3, "bl #0x50");
-    vm_states[3].r[14] = Some(ASM_ENTRY + OP_SIZE_32BIT + THUMBS_MODE); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     create_vm!(vms, vm_states, 4, "blx r1");
-    vm_states[4].r[14] = Some(ASM_ENTRY + OP_SIZE + THUMBS_MODE); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     run_test!(vms, vm_states, applicable_op_ids);
 }
@@ -253,7 +253,7 @@ pub fn test_branch_and_return() {
     let applicable_op_ids = vec![4];
 
     // 4: BLX <Rm> T1
-    vm_states[4].r[1] = Some(ASM_ENTRY + 2 * OP_SIZE + THUMBS_MODE);
+    vm_states[4].r[1] = Some(code_mem_address(2 * OP_SIZE));
     create_vm!(
         vms,
         vm_states,
@@ -268,7 +268,7 @@ pub fn test_branch_and_return() {
         svc             #0x01
     "
     );
-    vm_states[4].r[14] = Some(ASM_ENTRY + 3 * OP_SIZE + THUMBS_MODE); // Location of the last BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Location of the last BLX instruction is loaded to link reg
     vm_states[4].r[0] = Some(0xCD);
 
     run_test!(vms, vm_states, applicable_op_ids);
