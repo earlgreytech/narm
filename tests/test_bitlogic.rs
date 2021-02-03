@@ -53,11 +53,11 @@ pub fn test_bitlogic_result() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 2, 3, 4];
+    let ops_to_test = vec![0, 2, 3, 4];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x0000_1111));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x0101_0101));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x0000_1111));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0x0101_0101));
 
     // VM initialization
 
@@ -79,7 +79,7 @@ pub fn test_bitlogic_result() {
     create_vm!(vms, vm_states, 4, "eors r0, r1");
     vm_states[4].r[0] = Some(0x0101_1010);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // Set Negative flag when result is negative
@@ -92,18 +92,18 @@ pub fn test_bitlogic_flag_neg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 3, 4];
+    let ops_to_test = vec![0, 1, 2, 3, 4];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x8001_0000));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x8010_0000));
-    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0100_0000));
-    common_state!(applicable_op_ids, vm_states.r[3] = Some(0xFFFF_FFFF));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x8001_0000));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0x8010_0000));
+    common_state!(ops_to_test, vm_states.r[2] = Some(0x0100_0000));
+    common_state!(ops_to_test, vm_states.r[3] = Some(0xFFFF_FFFF));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(false));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true)); // Shouldn't be affected at all
-    common_state!(applicable_op_ids, vm_states.v = Some(true)); // Shouldn't be affected at all
+    common_state!(ops_to_test, vm_states.n = Some(false));
+    common_state!(ops_to_test, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.c = Some(true)); // Shouldn't be affected at all
+    common_state!(ops_to_test, vm_states.v = Some(true)); // Shouldn't be affected at all
 
     // VM initialization
 
@@ -126,10 +126,10 @@ pub fn test_bitlogic_flag_neg() {
     create_vm!(vms, vm_states, 4, "eors r0, r2");
     vm_states[4].r[0] = Some(0x8101_0000);
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(false));
+    common_state!(ops_to_test, vm_states.n = Some(true));
+    common_state!(ops_to_test, vm_states.z = Some(false));
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // Set Zero flag when result is zero
@@ -142,17 +142,17 @@ pub fn test_bitlogic_flag_zero() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 3, 4];
+    let ops_to_test = vec![0, 1, 2, 3, 4];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1010_1010));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x0101_0101));
-    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x00));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x1010_1010));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0x0101_0101));
+    common_state!(ops_to_test, vm_states.r[2] = Some(0x00));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(false));
-    common_state!(applicable_op_ids, vm_states.c = Some(true)); // Shouldn't be affected at all
-    common_state!(applicable_op_ids, vm_states.v = Some(true)); // Shouldn't be affected at all
+    common_state!(ops_to_test, vm_states.n = Some(true));
+    common_state!(ops_to_test, vm_states.z = Some(false));
+    common_state!(ops_to_test, vm_states.c = Some(true)); // Shouldn't be affected at all
+    common_state!(ops_to_test, vm_states.v = Some(true)); // Shouldn't be affected at all
 
     // VM initialization
 
@@ -174,8 +174,8 @@ pub fn test_bitlogic_flag_zero() {
     create_vm!(vms, vm_states, 4, "eors r0, r0");
     vm_states[4].r[0] = Some(0x00);
 
-    common_state!(applicable_op_ids, vm_states.n = Some(false));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.n = Some(false));
+    common_state!(ops_to_test, vm_states.z = Some(true));
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }

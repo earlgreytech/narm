@@ -43,7 +43,7 @@ pub fn test_mov_pc() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0];
+    let ops_to_test = vec![0];
 
     // VM initialization
 
@@ -71,5 +71,5 @@ pub fn test_mov_pc() {
     vm_states[0].r[3] = Some(0xFF);
     vm_states[0].r[4] = Some(0xFF);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }

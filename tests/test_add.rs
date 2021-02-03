@@ -62,13 +62,13 @@ pub fn test_add_regadd() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![2, 3, 4];
+    let ops_to_test = vec![2, 3, 4];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x0001_1111));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x0010_3333));
-    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0100_5555));
-    common_state!(applicable_op_ids, vm_states.r[8] = Some(0x1000_7777));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x0001_1111));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0x0010_3333));
+    common_state!(ops_to_test, vm_states.r[2] = Some(0x0100_5555));
+    common_state!(ops_to_test, vm_states.r[8] = Some(0x1000_7777));
 
     // VM initialization
 
@@ -90,7 +90,7 @@ pub fn test_add_regadd() {
 
     // 5: CMN <Rn>, <Rm> T1 - Not applicable
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // Calculate sum of a register and an immediate value
@@ -103,11 +103,11 @@ pub fn test_add_immadd() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1];
+    let ops_to_test = vec![0, 1];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x0011_3333));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x1100_5555));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x0011_3333));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0x1100_5555));
 
     // VM initialization
 
@@ -127,7 +127,7 @@ pub fn test_add_immadd() {
 
     // 5: CMN <Rn>, <Rm> T1 - Not applicable
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // Set Negative flag when result is negative + unset other flags
@@ -142,17 +142,17 @@ pub fn test_add_flag_neg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4, 5];
+    let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x8001_1111));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x8010_3333));
-    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0100_5555));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x8001_1111));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0x8010_3333));
+    common_state!(ops_to_test, vm_states.r[2] = Some(0x0100_5555));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(false));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    common_state!(ops_to_test, vm_states.n = Some(false));
+    common_state!(ops_to_test, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.c = Some(true));
+    common_state!(ops_to_test, vm_states.v = Some(true));
 
     // VM initialization
 
@@ -178,12 +178,12 @@ pub fn test_add_flag_neg() {
     create_vm!(vms, vm_states, 5, "cmn r0, r2");
 
     // Common expected post-execution state
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(false));
-    common_state!(applicable_op_ids, vm_states.c = Some(false));
-    common_state!(applicable_op_ids, vm_states.v = Some(false));
+    common_state!(ops_to_test, vm_states.n = Some(true));
+    common_state!(ops_to_test, vm_states.z = Some(false));
+    common_state!(ops_to_test, vm_states.c = Some(false));
+    common_state!(ops_to_test, vm_states.v = Some(false));
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // Set Zero flag when result is zero + unset other flags
@@ -196,18 +196,18 @@ pub fn test_add_flag_zero() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4, 5];
+    let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFFFF_FF01));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0xFFFF_FFF9));
-    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x0000_0007));
-    common_state!(applicable_op_ids, vm_states.r[3] = Some(0x0000_00FF));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0xFFFF_FF01));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0xFFFF_FFF9));
+    common_state!(ops_to_test, vm_states.r[2] = Some(0x0000_0007));
+    common_state!(ops_to_test, vm_states.r[3] = Some(0x0000_00FF));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(false));
-    common_state!(applicable_op_ids, vm_states.c = Some(false)); // Add wrap around to 0 -> set overflow/carry
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    common_state!(ops_to_test, vm_states.n = Some(true));
+    common_state!(ops_to_test, vm_states.z = Some(false));
+    common_state!(ops_to_test, vm_states.c = Some(false)); // Add wrap around to 0 -> set overflow/carry
+    common_state!(ops_to_test, vm_states.v = Some(true));
 
     // VM initialization
 
@@ -229,15 +229,15 @@ pub fn test_add_flag_zero() {
     create_vm!(vms, vm_states, 5, "cmn r0, r3");
 
     // Common expected post-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x00));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x00));
     vm_states[5].r[0] = None; // Op discards result anyway
 
-    common_state!(applicable_op_ids, vm_states.n = Some(false));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(false));
+    common_state!(ops_to_test, vm_states.n = Some(false));
+    common_state!(ops_to_test, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.c = Some(true));
+    common_state!(ops_to_test, vm_states.v = Some(false));
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // Set Carry flag when addition cause unsigned overflow + unset other flags
@@ -250,17 +250,17 @@ pub fn test_add_flag_carry() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4, 5];
+    let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0xFFFF_FFFF));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0xFFFF_FFFF));
-    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x06));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0xFFFF_FFFF));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0xFFFF_FFFF));
+    common_state!(ops_to_test, vm_states.r[2] = Some(0x06));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(false));
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    common_state!(ops_to_test, vm_states.n = Some(true));
+    common_state!(ops_to_test, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.c = Some(false));
+    common_state!(ops_to_test, vm_states.v = Some(true));
 
     // VM initialization
 
@@ -286,12 +286,12 @@ pub fn test_add_flag_carry() {
     create_vm!(vms, vm_states, 5, "cmn r0, r2");
 
     // Common expected post-execution state
-    common_state!(applicable_op_ids, vm_states.n = Some(false));
-    common_state!(applicable_op_ids, vm_states.z = Some(false));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(false));
+    common_state!(ops_to_test, vm_states.n = Some(false));
+    common_state!(ops_to_test, vm_states.z = Some(false));
+    common_state!(ops_to_test, vm_states.c = Some(true));
+    common_state!(ops_to_test, vm_states.v = Some(false));
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // Set V flag when addition cause signed overflow + unset other flags
@@ -304,17 +304,17 @@ pub fn test_add_flag_v() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 1, 2, 4, 5];
+    let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x7FFF_FFFF));
-    common_state!(applicable_op_ids, vm_states.r[1] = Some(0x7FFF_FFFF));
-    common_state!(applicable_op_ids, vm_states.r[2] = Some(0x06));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x7FFF_FFFF));
+    common_state!(ops_to_test, vm_states.r[1] = Some(0x7FFF_FFFF));
+    common_state!(ops_to_test, vm_states.r[2] = Some(0x06));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(false)); // Causing sign overflow with add -> negative number
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(false));
+    common_state!(ops_to_test, vm_states.n = Some(false)); // Causing sign overflow with add -> negative number
+    common_state!(ops_to_test, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.c = Some(true));
+    common_state!(ops_to_test, vm_states.v = Some(false));
 
     // VM initialization
 
@@ -340,12 +340,12 @@ pub fn test_add_flag_v() {
     create_vm!(vms, vm_states, 5, "cmn r0, r2");
 
     // Common expected post-execution state
-    common_state!(applicable_op_ids, vm_states.n = Some(true)); // Causing sign overflow with add -> negative number
-    common_state!(applicable_op_ids, vm_states.z = Some(false));
-    common_state!(applicable_op_ids, vm_states.c = Some(false));
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    common_state!(ops_to_test, vm_states.n = Some(true)); // Causing sign overflow with add -> negative number
+    common_state!(ops_to_test, vm_states.z = Some(false));
+    common_state!(ops_to_test, vm_states.c = Some(false));
+    common_state!(ops_to_test, vm_states.v = Some(true));
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // ADD <Rdn>, <Rm>: Calculate sum of two high registers + Preserve flags
@@ -358,7 +358,7 @@ pub fn test_add_high_noflags() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![3];
+    let ops_to_test = vec![3];
 
     // VM initialization
 
@@ -374,5 +374,5 @@ pub fn test_add_high_noflags() {
     create_vm!(vms, vm_states, 3, "add r8, r9");
     vm_states[3].r[8] = Some(0x1111_8888);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }

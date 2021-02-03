@@ -54,16 +54,16 @@ pub fn test_addsub_sp_to_sp() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![1, 3, 4];
+    let ops_to_test = vec![1, 3, 4];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1100_1110));
-    common_state!(applicable_op_ids, vm_states.r[13] = Some(0x0011_CCCC));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x1100_1110));
+    common_state!(ops_to_test, vm_states.r[13] = Some(0x0011_CCCC));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    common_state!(ops_to_test, vm_states.n = Some(true));
+    common_state!(ops_to_test, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.c = Some(true));
+    common_state!(ops_to_test, vm_states.v = Some(true));
 
     // VM initialization
 
@@ -83,7 +83,7 @@ pub fn test_addsub_sp_to_sp() {
     create_vm!(vms, vm_states, 4, "SUB SP, SP, #0x01FC");
     vm_states[4].r[13] = Some(0x0011_CAD0);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
 
 // SP artihmetic with register as destination + Preserve flags
@@ -96,16 +96,16 @@ pub fn test_addsub_sp_to_reg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 2];
+    let ops_to_test = vec![0, 2];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1100_1110));
-    common_state!(applicable_op_ids, vm_states.r[13] = Some(0x0011_CCCC));
+    common_state!(ops_to_test, vm_states.r[0] = Some(0x1100_1110));
+    common_state!(ops_to_test, vm_states.r[13] = Some(0x0011_CCCC));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    common_state!(ops_to_test, vm_states.n = Some(true));
+    common_state!(ops_to_test, vm_states.z = Some(true));
+    common_state!(ops_to_test, vm_states.c = Some(true));
+    common_state!(ops_to_test, vm_states.v = Some(true));
 
     // VM initialization
 
@@ -123,5 +123,5 @@ pub fn test_addsub_sp_to_reg() {
 
     // 4: SUB SP, SP, #<imm7> T1 - Not applicable
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(vms, vm_states, ops_to_test);
 }
