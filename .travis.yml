@@ -1,0 +1,13 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install arm-none-eabi-gcc
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+  
