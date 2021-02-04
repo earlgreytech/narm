@@ -4,51 +4,6 @@ mod common;
 use common::*;
 use narm::narmvm::*;
 
-/*
-
-Integration test for Branch operators
-
-Included varieties:
-
-B <label> T2            - Branch unconditionally by label, jump size restricted to signed 11 bits
-B<C> <label> T1         - Branch conditionally by label, jump size restricted to signed 8 bits
-BX <Rm> T1              - Branch by register
-BL <label> T1           - Branch by label, set link register, jump size restricted to even signed 25 bits (?????)
-BLX <Rm> T1             - Branch by register, set link register
-
-General test cases:
-
-- Branch forward
-- Branch backward
-- Branch far forward (Causing memory error)
-- Branch far backward (Causing memory error)
-
-Special test case for BLX <Rm> T1:
-
-- Branch and then branch back using address saved in link register
-
-Special test case for B<C>:
-
-- Test all different conditions
-
-The reference for these tests is currently official documentations and a QEMU-based VM
-TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
-
-*/
-
-// String representation of ops for use in debug output
-const OPCODES: &'static [&'static str] = &[
-    "B <label> T2",
-    "B<C> <label> T1",
-    "BX <Rm> T1",
-    "BL <label> T1 32bit",
-    "BLX <Rm> T1",
-];
-
-// Simple constant for number of opcodes tested in this file
-const NUM_OPCODES: &'static usize = &5;
-
-// Branch forward
 #[test]
 pub fn test_rust_hello_world() {
     println!("\n>>> Hello World Rust Program Test\n");
@@ -172,10 +127,5 @@ pub fn test_rust_hello_world() {
     );
     assert_eq!(vm.execute().unwrap(), 0xFF);
     vm.print_diagnostics();
-    let mut vm_expected: VMState = Default::default();
-
-    vm_expected.r[0] = Some(0xF1);
-
-    assert_vm_eq!(vm_expected, vm);
 }
 
