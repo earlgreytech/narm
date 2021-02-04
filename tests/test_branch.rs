@@ -169,7 +169,7 @@ pub fn test_branch_far_forward() {
     let ops_to_test = vec![2, 3, 4];
 
     // Common pre-execution state
-    set_for_all!(vm_states[ops_to_test].r[1] = Some(code_mem_address(100000 * OP_SIZE)) // 0x);
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(code_mem_address(100000 * OP_SIZE)));
     set_for_all!(vm_states[ops_to_test].expect_exec_error = true);
 
     // VM initialization
