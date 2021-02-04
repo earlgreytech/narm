@@ -476,7 +476,7 @@ macro_rules! execute_and_assert {
 // Macro to reduce boilerplate code when creating a VM with a single op
 #[macro_export]
 macro_rules! create_vm {
-    ( $vms:ident, $states:ident, $index:expr, $op:literal ) => {
+    ( arrays = ($vms:ident, $states:ident), op_id = $index:expr, asm_literal_add_svc = $op:literal ) => {
         println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
         print_vm_state!($states[$index]);
@@ -490,7 +490,7 @@ macro_rules! create_vm {
         ));
         load_into_vm!($states, $vms, $index);
     };
-    ( $vms:ident, $states:ident, $index:expr, multiline = true, $ops:literal ) => {
+    ( arrays = ($vms:ident, $states:ident), op_id = $index:expr, asm_literal = $ops:literal ) => {
         println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
         print_vm_state!($states[$index]);
@@ -498,7 +498,7 @@ macro_rules! create_vm {
         $vms[$index] = create_vm_from_asm($ops);
         load_into_vm!($states, $vms, $index);
     };
-    ( $vms:ident, $states:ident, $index:expr, code_var = true, $ops_str:ident ) => {
+    ( arrays = ($vms:ident, $states:ident), op_id = $index:expr, asm_var = $ops_str:ident ) => {
         println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
         print_vm_state!($states[$index]);

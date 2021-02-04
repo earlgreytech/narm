@@ -62,21 +62,37 @@ pub fn test_bitlogic_result() {
     // VM initialization
 
     // 0: ANDS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 0, "ands r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "ands r0, r1"
+    );
     vm_states[0].r[0] = Some(0x0000_0101);
 
     // 1: TST <Rn>, <Rm> T1 - Not applicable
 
     // 2: BICS <Rdn>, <Rm> T1"
-    create_vm!(vms, vm_states, 2, "bics r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "bics r0, r1"
+    );
     vm_states[2].r[0] = Some(0x0000_1010);
 
     // 3: ORRS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "orrs r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "orrs r0, r1"
+    );
     vm_states[3].r[0] = Some(0x0101_1111);
 
     // 4: EORS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 4, "eors r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "eors r0, r1"
+    );
     vm_states[4].r[0] = Some(0x0101_1010);
 
     run_test!(vms, vm_states, ops_to_test);
@@ -108,22 +124,42 @@ pub fn test_bitlogic_flag_neg() {
     // VM initialization
 
     // 0: ANDS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 0, "ands r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "ands r0, r1"
+    );
     vm_states[0].r[0] = Some(0x8000_0000);
 
     // 1: TST <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 1, "tst r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "tst r0, r1"
+    );
 
     // 2: BICS <Rdn>, <Rm> T1"
-    create_vm!(vms, vm_states, 2, "bics r0, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "bics r0, r2"
+    );
     vm_states[2].r[0] = Some(0x8001_0000);
 
     // 3: ORRS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "orrs r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "orrs r0, r1"
+    );
     vm_states[3].r[0] = Some(0x8011_0000);
 
     // 4: EORS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 4, "eors r0, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "eors r0, r2"
+    );
     vm_states[4].r[0] = Some(0x8101_0000);
 
     common_state!(ops_to_test, vm_states.n = Some(true));
@@ -157,21 +193,41 @@ pub fn test_bitlogic_flag_zero() {
     // VM initialization
 
     // 0: ANDS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 0, "ands r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "ands r0, r1"
+    );
     vm_states[0].r[0] = Some(0x00);
 
     // 1: TST <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 1, "tst r0, r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "tst r0, r1"
+    );
 
     // 2: BICS <Rdn>, <Rm> T1"
-    create_vm!(vms, vm_states, 2, "bics r0, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "bics r0, r0"
+    );
     vm_states[2].r[0] = Some(0x00);
 
     // 3: ORRS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "orrs r2, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "orrs r2, r2"
+    );
 
     // 4: EORS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 4, "eors r0, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "eors r0, r0"
+    );
     vm_states[4].r[0] = Some(0x00);
 
     common_state!(ops_to_test, vm_states.n = Some(false));

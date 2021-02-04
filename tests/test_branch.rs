@@ -76,24 +76,24 @@ pub fn test_branch_forward() {
 
     // 0: B <label> T2"
     let ops0 = format!("b test1 {}", post_ops);
-    create_vm!(vms, vm_states, 0, code_var = true, ops0);
+    create_vm!(arrays = (vms, vm_states), op_id = 0, asm_var = ops0);
 
     // 1: B<C> <label> T1 (BNE -> if flag Z = 0)
     let ops1 = format!("bne test1 {}", post_ops);
-    create_vm!(vms, vm_states, 1, code_var = true, ops1);
+    create_vm!(arrays = (vms, vm_states), op_id = 1, asm_var = ops1);
 
     // 2: BX <Rm> T1
     let ops2 = format!("bx r1 {}", post_ops);
-    create_vm!(vms, vm_states, 2, code_var = true, ops2);
+    create_vm!(arrays = (vms, vm_states), op_id = 2, asm_var = ops2);
 
     // 3: BL <label> T1 32bit
     let ops3 = format!("bl test1 {}", post_ops);
-    create_vm!(vms, vm_states, 3, code_var = true, ops3);
+    create_vm!(arrays = (vms, vm_states), op_id = 3, asm_var = ops3);
     vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     let ops4 = format!("blx r1 {}", post_ops);
-    create_vm!(vms, vm_states, 4, code_var = true, ops4);
+    create_vm!(arrays = (vms, vm_states), op_id = 4, asm_var = ops4);
     vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     // Common expected post-execution state
@@ -135,24 +135,24 @@ pub fn test_branch_backward() {
 
     // 0: B <label> T2"
     let ops0 = format!("{}b test1 {}", pre_ops, post_ops);
-    create_vm!(vms, vm_states, 0, code_var = true, ops0);
+    create_vm!(arrays = (vms, vm_states), op_id = 0, asm_var = ops0);
 
     // 1: B<C> <label> T1 (BNE -> if flag Z = 0)
     let ops1 = format!("{}bne test1 {}", pre_ops, post_ops);
-    create_vm!(vms, vm_states, 1, code_var = true, ops1);
+    create_vm!(arrays = (vms, vm_states), op_id = 1, asm_var = ops1);
 
     // 2: BX <Rm> T1
     let ops2 = format!("{}bx r1 {}", pre_ops, post_ops);
-    create_vm!(vms, vm_states, 2, code_var = true, ops2);
+    create_vm!(arrays = (vms, vm_states), op_id = 2, asm_var = ops2);
 
     // 3: BL <label> T1 32bit
     let ops3 = format!("{}bl test1 {}", pre_ops, post_ops);
-    create_vm!(vms, vm_states, 3, code_var = true, ops3);
+    create_vm!(arrays = (vms, vm_states), op_id = 3, asm_var = ops3);
     vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT + OP_SIZE * 2)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     let ops4 = format!("{}blx r1 {}", pre_ops, post_ops);
-    create_vm!(vms, vm_states, 4, code_var = true, ops4);
+    create_vm!(arrays = (vms, vm_states), op_id = 4, asm_var = ops4);
     vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     // Common expected post-execution state
@@ -188,14 +188,26 @@ pub fn test_branch_far_forward() {
     // 1: B<C> <label> T1  - Not applicable
 
     // 2: BX <Rm> T1
-    create_vm!(vms, vm_states, 2, "bx r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "bx r1"
+    );
 
     // 3: BL <label> T1 32bit
-    create_vm!(vms, vm_states, 3, "bl #0xF0001");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "bl #0xF0001"
+    );
     vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
-    create_vm!(vms, vm_states, 4, "blx r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "blx r1"
+    );
     vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     run_test!(vms, vm_states, ops_to_test);
@@ -224,14 +236,26 @@ pub fn test_branch_far_backward() {
     // 1: B<C> <label> T1  - Not applicable
 
     // 2: BX <Rm> T1
-    create_vm!(vms, vm_states, 2, "bx r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "bx r1"
+    );
 
     // 3: BL <label> T1 32bit
-    create_vm!(vms, vm_states, 3, "bl #0x50");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "bl #0x50"
+    );
     vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
-    create_vm!(vms, vm_states, 4, "blx r1");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "blx r1"
+    );
     vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     run_test!(vms, vm_states, ops_to_test);
@@ -252,11 +276,9 @@ pub fn test_branch_and_return() {
     // 4: BLX <Rm> T1
     vm_states[4].r[1] = Some(code_mem_address(2 * OP_SIZE));
     create_vm!(
-        vms,
-        vm_states,
-        4,
-        multiline = true,
-        "
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal = "
         blx r1
         svc             #0xFF
         movs r0,        #0xCD

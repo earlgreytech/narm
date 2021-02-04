@@ -70,17 +70,29 @@ pub fn test_addsub_sp_to_sp() {
     // 0: ADD <Rd>, SP, #<imm8> T1 - Not applicable
 
     // 1: ADD SP, SP, #<imm7> T2
-    create_vm!(vms, vm_states, 1, "ADD SP, SP, #0x01FC");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "ADD SP, SP, #0x01FC"
+    );
     vm_states[1].r[13] = Some(0x0011_CEC8);
 
     // 2: ADD <Rdm>, SP, <Rdm> T1 - Not applicable
 
     // 3: ADD SP, <Rm> T2
-    create_vm!(vms, vm_states, 3, "ADD SP, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "ADD SP, r0"
+    );
     vm_states[3].r[13] = Some(0x1111_DDDC);
 
     // 4: SUB SP, SP, #<imm7> T1
-    create_vm!(vms, vm_states, 4, "SUB SP, SP, #0x01FC");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "SUB SP, SP, #0x01FC"
+    );
     vm_states[4].r[13] = Some(0x0011_CAD0);
 
     run_test!(vms, vm_states, ops_to_test);
@@ -110,13 +122,21 @@ pub fn test_addsub_sp_to_reg() {
     // VM initialization
 
     // 0: ADD <Rd>, SP, #<imm8> T1
-    create_vm!(vms, vm_states, 0, "ADD r0, SP, #0x03FC");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "ADD r0, SP, #0x03FC"
+    );
     vm_states[0].r[0] = Some(0x0011_D0C8);
 
     // 1: ADD SP, SP, #<imm7> T2 - Not applicable
 
     // 2: ADD <Rdm>, SP, <Rdm> T1
-    create_vm!(vms, vm_states, 2, "ADD r0, SP, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "ADD r0, SP, r0"
+    );
     vm_states[2].r[0] = Some(0x1111_DDDC);
 
     // 3: ADD SP, <Rm> T2 - Not applicable

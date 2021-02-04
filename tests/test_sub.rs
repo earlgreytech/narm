@@ -75,11 +75,19 @@ pub fn test_sub_regsub() {
     // 1: SUBS <Rdn>, #<imm8> T2 - Not applicable
 
     // 2: SUBS <Rd>, <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 2, "subs r0, r1, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "subs r0, r1, r2"
+    );
     vm_states[2].r[0] = Some(0x0101_4444);
 
     // 3: SBCS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "sbcs r0, r2"); // - 1 (NOT carry)
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "sbcs r0, r2"
+    ); // - 1 (NOT carry)
     vm_states[3].r[0] = Some(0x0101_2221);
 
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1 - Not applicable
@@ -113,11 +121,19 @@ pub fn test_sub_immsub() {
     // VM initialization
 
     // 0: SUBS <Rd>, <Rn>, #<imm3> T1
-    create_vm!(vms, vm_states, 0, "subs r0, r1, #0x07");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "subs r0, r1, #0x07"
+    );
     vm_states[0].r[0] = Some(0x0010_554E);
 
     // 1: SUBS <Rdn>, #<imm8> T2
-    create_vm!(vms, vm_states, 1, "subs r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "subs r0, #0xFF"
+    );
     vm_states[1].r[0] = Some(0x0101_3234);
 
     // 2: SUBS <Rd>, <Rn>, <Rm> T1 - Not applicable
@@ -125,7 +141,11 @@ pub fn test_sub_immsub() {
     // 3: SBCS <Rdn>, <Rm> T1 - Not applicable
 
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1
-    create_vm!(vms, vm_states, 4, "rsbs r0, r1, #0x00"); // Actually reverse: imm - reg
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "rsbs r0, r1, #0x00"
+    ); // Actually reverse: imm - reg
     vm_states[4].r[0] = Some(0xFFEF_AAAB);
     vm_states[4].n = Some(true);
 
@@ -168,30 +188,58 @@ pub fn test_sub_flag_neg() {
     // VM initialization
 
     // 0: SUBS <Rd>, <Rn>, #<imm3> T1
-    create_vm!(vms, vm_states, 0, "subs r0, r1, #0x07");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "subs r0, r1, #0x07"
+    );
     vm_states[0].r[0] = Some(0x8642_332C);
 
     // 1: SUBS <Rdn>, #<imm8> T2
-    create_vm!(vms, vm_states, 1, "subs r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "subs r0, #0xFF"
+    );
     vm_states[1].r[0] = Some(0x8642_3234);
 
     // 2: SUBS <Rd>, <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 2, "subs r0, r1, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "subs r0, r1, r2"
+    );
     vm_states[2].r[0] = Some(0x8642_332D);
 
     // 3: SBCS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "sbcs r0, r2"); // - 1 (NOT carry)
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "sbcs r0, r2"
+    ); // - 1 (NOT carry)
     vm_states[3].r[0] = Some(0x8642_332C);
 
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1
-    create_vm!(vms, vm_states, 4, "rsbs r0, r2, #0x00");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "rsbs r0, r2, #0x00"
+    );
     vm_states[4].r[0] = Some(0xFFFF_FFFA);
 
     // 5: CMP <Rn>, #<imm8> T1
-    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 5,
+        asm_literal_add_svc = "cmp r0, #0xFF"
+    );
 
     // 6: CMP <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 6, "cmp r0, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 6,
+        asm_literal_add_svc = "cmp r0, r2"
+    );
 
     // Common expected post-execution state
     common_state!(ops_to_test, vm_states.n = Some(true));
@@ -230,25 +278,53 @@ pub fn test_sub_flag_zero() {
     // VM initialization
 
     // 0: SUBS <Rd>, <Rn>, #<imm3> T1
-    create_vm!(vms, vm_states, 0, "subs r0, r1, #0x07");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "subs r0, r1, #0x07"
+    );
 
     // 1: SUBS <Rdn>, #<imm8> T2
-    create_vm!(vms, vm_states, 1, "subs r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "subs r0, #0xFF"
+    );
 
     // 2: SUBS <Rd>, <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 2, "subs r0, r1, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "subs r0, r1, r2"
+    );
 
     // 3: SBCS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "sbcs r0, r3"); // - 1 (NOT carry)
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "sbcs r0, r3"
+    ); // - 1 (NOT carry)
 
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1
-    create_vm!(vms, vm_states, 4, "rsbs r0, r4, #0x00");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "rsbs r0, r4, #0x00"
+    );
 
     // 5: CMP <Rn>, #<imm8> T1
-    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 5,
+        asm_literal_add_svc = "cmp r0, #0xFF"
+    );
 
     // 6: CMP <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 6, "cmp r1, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 6,
+        asm_literal_add_svc = "cmp r1, r2"
+    );
 
     // Common expected post-execution state
     common_state!(ops_to_test, vm_states.r[0] = Some(0x00));
@@ -293,25 +369,53 @@ pub fn test_sub_flag_carry() {
     // VM initialization
 
     // 0: SUBS <Rd>, <Rn>, #<imm3> T1
-    create_vm!(vms, vm_states, 0, "subs r0, r1, #0x07");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "subs r0, r1, #0x07"
+    );
 
     // 1: SUBS <Rdn>, #<imm8> T2
-    create_vm!(vms, vm_states, 1, "subs r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "subs r0, #0xFF"
+    );
 
     // 2: SUBS <Rd>, <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 2, "subs r0, r1, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "subs r0, r1, r2"
+    );
 
     // 3: SBCS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "sbcs r0, r3");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "sbcs r0, r3"
+    );
 
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1
-    create_vm!(vms, vm_states, 4, "rsbs r0, r4, #0x00");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "rsbs r0, r4, #0x00"
+    );
 
     // 5: CMP <Rn>, #<imm8> T1
-    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 5,
+        asm_literal_add_svc = "cmp r0, #0xFF"
+    );
 
     // 6: CMP <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 6, "cmp r0, r3");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 6,
+        asm_literal_add_svc = "cmp r0, r3"
+    );
 
     // Common expected post-execution state
     common_state!(ops_to_test, vm_states.r[0] = Some(0xFFFF_FFFF)); // = -1
@@ -353,26 +457,50 @@ pub fn test_sub_flag_v() {
     // VM initialization
 
     // 0: SUBS <Rd>, <Rn>, #<imm3> T1
-    create_vm!(vms, vm_states, 0, "subs r0, r1, #0x07");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "subs r0, r1, #0x07"
+    );
 
     // 1: SUBS <Rdn>, #<imm8> T2
-    create_vm!(vms, vm_states, 1, "subs r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "subs r0, #0xFF"
+    );
 
     // 2: SUBS <Rd>, <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 2, "subs r0, r1, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "subs r0, r1, r2"
+    );
 
     // 3: SBCS <Rdn>, <Rm> T1
-    create_vm!(vms, vm_states, 3, "sbcs r0, r3"); // - 1 (NOT carry)
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "sbcs r0, r3"
+    ); // - 1 (NOT carry)
 
     // 4: RSBS <Rd>, <Rn>, #<imm0> T1 - Not applicable
     // It feels like, say 0 - 0x8000_000F *should* cause signed overflow, but doesn't due to how it's handled internally
     // ( -> 0 + bitwise_neg(0x8000_000F) = 0 + 7FFF_FFF0 -> no signed overflow
 
     // 5: CMP <Rn>, #<imm8> T1
-    create_vm!(vms, vm_states, 5, "cmp r0, #0xFF");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 5,
+        asm_literal_add_svc = "cmp r0, #0xFF"
+    );
 
     // 6: CMP <Rn>, <Rm> T1
-    create_vm!(vms, vm_states, 6, "cmp r1, r2");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 6,
+        asm_literal_add_svc = "cmp r1, r2"
+    );
 
     // Common expected post-execution state
     common_state!(ops_to_test, vm_states.r[0] = Some(0x7FFF_FFFF));

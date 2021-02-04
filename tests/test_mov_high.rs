@@ -49,11 +49,9 @@ pub fn test_mov_pc() {
 
     // 0: MOV <Rd>, <Rm> T1
     create_vm!(
-        vms,
-        vm_states,
-        0,
-        multiline = true,
-        "
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal = "
         mov  r0, r15
         adds r0,            #0x0A
         mov  r15, r0
