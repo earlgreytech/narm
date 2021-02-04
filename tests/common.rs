@@ -23,6 +23,8 @@ pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     let mut vm = NarmVM::default();
     vm.memory.add_memory(0x01_0000, 0x01_0000).unwrap();
     vm.copy_into_memory(0x01_0000, &text_scn.data).unwrap();
+    //add stack memory
+    vm.memory.add_memory(0x8100_0000, 0xFFFF).unwrap();
     vm.set_thumb_pc_address(ASM_ENTRY);
     vm.gas_remaining = DEFAULT_GAS;
     vm
@@ -60,7 +62,7 @@ pub fn asm(input: &str) -> elf::File {
     let object = dir.path().join("test_code.o");
     let output = dir.path().join("test_code.elf");
     let linkfile = dir.path().join("link.ld");
-    println!("asm: {}\n---------------", asm);
+    println!("--------------\nasm: {}\n---------------", asm);
 
     let mut f1 = std::fs::File::create(&input).unwrap();
     writeln!(f1, "{}", asm).unwrap();
