@@ -15,8 +15,11 @@ pub fn test_rust_hello_world() {
      mov        sp, r0
      bl         main  
      //note if a nop is removed here, it'll turn into an infinite loop   
-     nop    //replaces svc exit call   
      //and conversely, if a nop is added here it'll also turn into an infinite loop
+     //There is some alignment specific weirdness happening here
+     nop    //replaces svc exit call   
+     //nop
+     //nop
 
          __exit:
      svc        #0xff                                               // CODE XREF=main+46
@@ -55,12 +58,6 @@ pub fn test_rust_hello_world() {
      bl         __exit                                              // __exit
 
 
-         sub_1004a:
-     .inst 0xde00 //purposefully invalid instruction
-     lsls       r0, r3, #0x2                                        // DATA XREF=main+6, main+22
-     movs       r1, r0
-
-
          _str_len:        // core::str::_$LT$impl$u20$str$GT$::len::h7c07257dd994f6dd
      push       {r7, lr}                                            // CODE XREF=main+26
      add        r7, sp, #0x0
@@ -84,7 +81,6 @@ pub fn test_rust_hello_world() {
      ldr        r0, [sp, #0x28 + -36]                            // CODE XREF=_ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE+38
      add        sp, #0x28
      pop        {r7, pc}
-                    // endp
 
 
          _str_as_ptr:        // core::str::_$LT$impl$u20$str$GT$::as_ptr::h00fa268ff4863332
@@ -93,7 +89,6 @@ pub fn test_rust_hello_world() {
      str        r1, [sp, #0x8 + -4]
      add        sp, #0x8
      bx         lr
-                    // endp
 
 
 
@@ -109,13 +104,7 @@ pub fn test_rust_hello_world() {
 
 
          test_string: 
-     //these instructions encode the string 'foobar 123!' 
-     ldr        r6, [r4, #0x74]                                     // DATA XREF=main+22
-     str        r7, [r5, #0x24]
-     strb       r1, [r4, #0x9]
-     adds       r1, #0x20
-     adds       r3, #0x32
-     .byte  0x21 // '!'
+         .string \"foo bar 123!\"     // DATA XREF=main+22
 
 
 
