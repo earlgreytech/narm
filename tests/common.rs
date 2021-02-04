@@ -531,38 +531,38 @@ macro_rules! run_test {
 
 // Macro to reduce boilerplate code when altering all VM state structs in a test
 #[macro_export]
-macro_rules! common_state {
-    ( $op_id_vec:ident, $states:ident.r[$index:expr] = Some($value:expr) ) => {
+macro_rules! set_for_all {
+    ( $states:ident[$op_id_vec:ident].r[$index:expr] = Some($value:expr) ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].r[$index] = Some($value);
         }
     };
-    ( $op_id_vec:ident, $states:ident.r[$index:expr] = $value:expr ) => {
+    ( $states:ident[$op_id_vec:ident].r[$index:expr] = $value:expr ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].r[$index] = $value;
         }
     };
-    ( $op_id_vec:ident, $states:ident.r[$index:expr] = None ) => {
+    ( $states:ident[$op_id_vec:ident].r[$index:expr] = None ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].r[$index] = None;
         }
     };
-    ( $op_id_vec:ident, $states:ident.$target:ident = Some($value:expr) ) => {
+    ( $states:ident[$op_id_vec:ident].$target:ident = Some($value:expr) ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].$target = Some($value);
         }
     };
-    ( $op_id_vec:ident, $states:ident.$target:ident = $value:expr ) => {
+    ( $states:ident[$op_id_vec:ident].$target:ident = $value:expr ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].$target = $value;
         }
     };
-    ( $op_id_vec:ident, $states:ident.$target:ident = None ) => {
+    ( $states:ident[$op_id_vec:ident].$target:ident = None ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].$target = None;

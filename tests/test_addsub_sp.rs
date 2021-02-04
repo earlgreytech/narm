@@ -57,13 +57,13 @@ pub fn test_addsub_sp_to_sp() {
     let ops_to_test = vec![1, 3, 4];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0x1100_1110));
-    common_state!(ops_to_test, vm_states.r[13] = Some(0x0011_CCCC));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x1100_1110));
+    set_for_all!(vm_states[ops_to_test].r[13] = Some(0x0011_CCCC));
 
-    common_state!(ops_to_test, vm_states.n = Some(true));
-    common_state!(ops_to_test, vm_states.z = Some(true));
-    common_state!(ops_to_test, vm_states.c = Some(true));
-    common_state!(ops_to_test, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(true));
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     // VM initialization
 
@@ -111,13 +111,13 @@ pub fn test_addsub_sp_to_reg() {
     let ops_to_test = vec![0, 2];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0x1100_1110));
-    common_state!(ops_to_test, vm_states.r[13] = Some(0x0011_CCCC));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x1100_1110));
+    set_for_all!(vm_states[ops_to_test].r[13] = Some(0x0011_CCCC));
 
-    common_state!(ops_to_test, vm_states.n = Some(true));
-    common_state!(ops_to_test, vm_states.z = Some(true));
-    common_state!(ops_to_test, vm_states.c = Some(true));
-    common_state!(ops_to_test, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(true));
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     // VM initialization
 

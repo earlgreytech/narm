@@ -61,10 +61,7 @@ pub fn test_branch_forward() {
     let ops_to_test = vec![0, 1, 2, 3, 4];
 
     // Common pre-execution state
-    common_state!(
-        ops_to_test,
-        vm_states.r[1] = Some(code_mem_address(2 * OP_SIZE))
-    );
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(code_mem_address(2 * OP_SIZE)));
 
     // VM initialization
     let post_ops = "
@@ -97,7 +94,7 @@ pub fn test_branch_forward() {
     vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     // Common expected post-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0xCD));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0xCD));
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -115,11 +112,8 @@ pub fn test_branch_backward() {
     let ops_to_test = vec![0, 1, 2, 3, 4];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[1] = Some(code_mem_address(0)));
-    common_state!(
-        ops_to_test,
-        vm_states.pc_address = Some(code_mem_address(2 * OP_SIZE))
-    );
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(code_mem_address(0)));
+    set_for_all!(vm_states[ops_to_test].pc_address = Some(code_mem_address(2 * OP_SIZE)));
 
     // VM initialization
     let pre_ops = "
@@ -156,8 +150,8 @@ pub fn test_branch_backward() {
     vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
     // Common expected post-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0xCD));
-    common_state!(ops_to_test, vm_states.pc_address = None);
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0xCD));
+    set_for_all!(vm_states[ops_to_test].pc_address = None);
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -175,11 +169,8 @@ pub fn test_branch_far_forward() {
     let ops_to_test = vec![2, 3, 4];
 
     // Common pre-execution state
-    common_state!(
-        ops_to_test,
-        vm_states.r[1] = Some(code_mem_address(100000 * OP_SIZE)) // 0x
-    );
-    common_state!(ops_to_test, vm_states.expect_exec_error = true);
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(code_mem_address(100000 * OP_SIZE)) // 0x);
+    set_for_all!(vm_states[ops_to_test].expect_exec_error = true);
 
     // VM initialization
 
@@ -226,8 +217,8 @@ pub fn test_branch_far_backward() {
     let ops_to_test = vec![2, 3, 4];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[1] = Some(0x50));
-    common_state!(ops_to_test, vm_states.expect_exec_error = true);
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(0x50));
+    set_for_all!(vm_states[ops_to_test].expect_exec_error = true);
 
     // VM initialization
 

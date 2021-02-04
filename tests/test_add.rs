@@ -65,10 +65,10 @@ pub fn test_add_regadd() {
     let ops_to_test = vec![2, 3, 4];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0x0001_1111));
-    common_state!(ops_to_test, vm_states.r[1] = Some(0x0010_3333));
-    common_state!(ops_to_test, vm_states.r[2] = Some(0x0100_5555));
-    common_state!(ops_to_test, vm_states.r[8] = Some(0x1000_7777));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x0001_1111));
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(0x0010_3333));
+    set_for_all!(vm_states[ops_to_test].r[2] = Some(0x0100_5555));
+    set_for_all!(vm_states[ops_to_test].r[8] = Some(0x1000_7777));
 
     // VM initialization
 
@@ -118,8 +118,8 @@ pub fn test_add_immadd() {
     let ops_to_test = vec![0, 1];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0x0011_3333));
-    common_state!(ops_to_test, vm_states.r[1] = Some(0x1100_5555));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x0011_3333));
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(0x1100_5555));
 
     // VM initialization
 
@@ -165,14 +165,14 @@ pub fn test_add_flag_neg() {
     let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0x8001_1111));
-    common_state!(ops_to_test, vm_states.r[1] = Some(0x8010_3333));
-    common_state!(ops_to_test, vm_states.r[2] = Some(0x0100_5555));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x8001_1111));
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(0x8010_3333));
+    set_for_all!(vm_states[ops_to_test].r[2] = Some(0x0100_5555));
 
-    common_state!(ops_to_test, vm_states.n = Some(false));
-    common_state!(ops_to_test, vm_states.z = Some(true));
-    common_state!(ops_to_test, vm_states.c = Some(true));
-    common_state!(ops_to_test, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(false));
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     // VM initialization
 
@@ -218,10 +218,10 @@ pub fn test_add_flag_neg() {
     );
 
     // Common expected post-execution state
-    common_state!(ops_to_test, vm_states.n = Some(true));
-    common_state!(ops_to_test, vm_states.z = Some(false));
-    common_state!(ops_to_test, vm_states.c = Some(false));
-    common_state!(ops_to_test, vm_states.v = Some(false));
+    set_for_all!(vm_states[ops_to_test].n = Some(true));
+    set_for_all!(vm_states[ops_to_test].z = Some(false));
+    set_for_all!(vm_states[ops_to_test].c = Some(false));
+    set_for_all!(vm_states[ops_to_test].v = Some(false));
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -239,15 +239,15 @@ pub fn test_add_flag_zero() {
     let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0xFFFF_FF01));
-    common_state!(ops_to_test, vm_states.r[1] = Some(0xFFFF_FFF9));
-    common_state!(ops_to_test, vm_states.r[2] = Some(0x0000_0007));
-    common_state!(ops_to_test, vm_states.r[3] = Some(0x0000_00FF));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0xFFFF_FF01));
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(0xFFFF_FFF9));
+    set_for_all!(vm_states[ops_to_test].r[2] = Some(0x0000_0007));
+    set_for_all!(vm_states[ops_to_test].r[3] = Some(0x0000_00FF));
 
-    common_state!(ops_to_test, vm_states.n = Some(true));
-    common_state!(ops_to_test, vm_states.z = Some(false));
-    common_state!(ops_to_test, vm_states.c = Some(false)); // Add wrap around to 0 -> set overflow/carry
-    common_state!(ops_to_test, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(true));
+    set_for_all!(vm_states[ops_to_test].z = Some(false));
+    set_for_all!(vm_states[ops_to_test].c = Some(false)); // Add wrap around to 0 -> set overflow/carry
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     // VM initialization
 
@@ -289,13 +289,13 @@ pub fn test_add_flag_zero() {
     );
 
     // Common expected post-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0x00));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x00));
     vm_states[5].r[0] = None; // Op discards result anyway
 
-    common_state!(ops_to_test, vm_states.n = Some(false));
-    common_state!(ops_to_test, vm_states.z = Some(true));
-    common_state!(ops_to_test, vm_states.c = Some(true));
-    common_state!(ops_to_test, vm_states.v = Some(false));
+    set_for_all!(vm_states[ops_to_test].n = Some(false));
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(false));
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -313,14 +313,14 @@ pub fn test_add_flag_carry() {
     let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0xFFFF_FFFF));
-    common_state!(ops_to_test, vm_states.r[1] = Some(0xFFFF_FFFF));
-    common_state!(ops_to_test, vm_states.r[2] = Some(0x06));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0xFFFF_FFFF));
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(0xFFFF_FFFF));
+    set_for_all!(vm_states[ops_to_test].r[2] = Some(0x06));
 
-    common_state!(ops_to_test, vm_states.n = Some(true));
-    common_state!(ops_to_test, vm_states.z = Some(true));
-    common_state!(ops_to_test, vm_states.c = Some(false));
-    common_state!(ops_to_test, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(true));
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(false));
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     // VM initialization
 
@@ -366,10 +366,10 @@ pub fn test_add_flag_carry() {
     );
 
     // Common expected post-execution state
-    common_state!(ops_to_test, vm_states.n = Some(false));
-    common_state!(ops_to_test, vm_states.z = Some(false));
-    common_state!(ops_to_test, vm_states.c = Some(true));
-    common_state!(ops_to_test, vm_states.v = Some(false));
+    set_for_all!(vm_states[ops_to_test].n = Some(false));
+    set_for_all!(vm_states[ops_to_test].z = Some(false));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(false));
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -387,14 +387,14 @@ pub fn test_add_flag_v() {
     let ops_to_test = vec![0, 1, 2, 4, 5];
 
     // Common pre-execution state
-    common_state!(ops_to_test, vm_states.r[0] = Some(0x7FFF_FFFF));
-    common_state!(ops_to_test, vm_states.r[1] = Some(0x7FFF_FFFF));
-    common_state!(ops_to_test, vm_states.r[2] = Some(0x06));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x7FFF_FFFF));
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(0x7FFF_FFFF));
+    set_for_all!(vm_states[ops_to_test].r[2] = Some(0x06));
 
-    common_state!(ops_to_test, vm_states.n = Some(false)); // Causing sign overflow with add -> negative number
-    common_state!(ops_to_test, vm_states.z = Some(true));
-    common_state!(ops_to_test, vm_states.c = Some(true));
-    common_state!(ops_to_test, vm_states.v = Some(false));
+    set_for_all!(vm_states[ops_to_test].n = Some(false)); // Causing sign overflow with add -> negative number
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(false));
 
     // VM initialization
 
@@ -440,10 +440,10 @@ pub fn test_add_flag_v() {
     );
 
     // Common expected post-execution state
-    common_state!(ops_to_test, vm_states.n = Some(true)); // Causing sign overflow with add -> negative number
-    common_state!(ops_to_test, vm_states.z = Some(false));
-    common_state!(ops_to_test, vm_states.c = Some(false));
-    common_state!(ops_to_test, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(true)); // Causing sign overflow with add -> negative number
+    set_for_all!(vm_states[ops_to_test].z = Some(false));
+    set_for_all!(vm_states[ops_to_test].c = Some(false));
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
