@@ -38,15 +38,15 @@ pub fn test_rust_hello_world() {
      push       {r7, lr}                                            // CODE XREF=__boot+4
      add        r7, sp, #0x0
      sub        sp, #0x10
-     ldr        r0, =sub_10098                                      // 0x1004c
+     ldr        r0, =test_string                                      // 0x1004c
      str        r0, [sp, #0x8]
      movs       r1, #0xb                                            // argument #2 for method _ZN4core3str21_$LT$impl$u20$str$GT$6as_ptr17h00fa268ff4863332E
      str        r1, [sp, #0xc]
-     bl         _ZN4core3str21_$LT$impl$u20$str$GT$6as_ptr17h00fa268ff4863332E // core::str::_$LT$impl$u20$str$GT$::as_ptr::h00fa268ff4863332
+     bl         _str_as_ptr    // core::str::_$LT$impl$u20$str$GT$::as_ptr::h00fa268ff4863332
      str        r0, [sp, #0x4]
-     ldr        r0, =sub_10098                                      // argument #1 for method _ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE, 0x1004c,sub_10098, CODE XREF=main+20
+     ldr        r0, =test_string                                      // argument #1 for method _ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE, 0x1004c,sub_10098, CODE XREF=main+20
      movs       r1, #0xb                                            // argument #2 for method _ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE
-     bl         _ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE // core::str::_$LT$impl$u20$str$GT$::len::h7c07257dd994f6dd
+     bl         _str_len      // core::str::_$LT$impl$u20$str$GT$::len::h7c07257dd994f6dd
      str        r0, [sp]
      ldr        r0, [sp, #0x4]                                      // CODE XREF=main+32
      ldr        r1, [sp]
@@ -61,7 +61,7 @@ pub fn test_rust_hello_world() {
      movs       r1, r0
 
 
-         _ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE:        // core::str::_$LT$impl$u20$str$GT$::len::h7c07257dd994f6dd
+         _str_len:        // core::str::_$LT$impl$u20$str$GT$::len::h7c07257dd994f6dd
      push       {r7, lr}                                            // CODE XREF=main+26
      add        r7, sp, #0x0
      sub        sp, #0x28
@@ -75,15 +75,11 @@ pub fn test_rust_hello_world() {
      ldr        r1, [sp, #0x28 + -4]
      str        r0, [sp, #0x28 + -28]
      str        r1, [sp, #0x28 + -32]
-     b          loc_1006c
-
          loc_1006c:
      ldr        r0, [sp, #0x28 + -28]                            // argument #1 for method _ZN4core5slice29_$LT$impl$u20$$u5b$T$u5d$$GT$3len17hf4276695aa93f7dfE, CODE XREF=_ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE+26
      ldr        r1, [sp, #0x28 + -32]                            // argument #2 for method _ZN4core5slice29_$LT$impl$u20$$u5b$T$u5d$$GT$3len17hf4276695aa93f7dfE
-     bl         _ZN4core5slice29_$LT$impl$u20$$u5b$T$u5d$$GT$3len17hf4276695aa93f7dfE // core::slice::_$LT$impl$u20$$u5b$T$u5d$$GT$::len::hf4276695aa93f7df
+     bl         _slice_len // core::slice::_$LT$impl$u20$$u5b$T$u5d$$GT$::len::hf4276695aa93f7df
      str        r0, [sp, #0x28 + -36]
-     b          loc_10078
-
          loc_10078:
      ldr        r0, [sp, #0x28 + -36]                            // CODE XREF=_ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE+38
      add        sp, #0x28
@@ -91,7 +87,7 @@ pub fn test_rust_hello_world() {
                     // endp
 
 
-         _ZN4core3str21_$LT$impl$u20$str$GT$6as_ptr17h00fa268ff4863332E:        // core::str::_$LT$impl$u20$str$GT$::as_ptr::h00fa268ff4863332
+         _str_as_ptr:        // core::str::_$LT$impl$u20$str$GT$::as_ptr::h00fa268ff4863332
      sub        sp, #0x8                                            // CODE XREF=main+14
      str        r0, [sp, #0x8 + -8]
      str        r1, [sp, #0x8 + -4]
@@ -101,7 +97,7 @@ pub fn test_rust_hello_world() {
 
 
 
-         _ZN4core5slice29_$LT$impl$u20$$u5b$T$u5d$$GT$3len17hf4276695aa93f7dfE:        // core::slice::_$LT$impl$u20$$u5b$T$u5d$$GT$::len::hf4276695aa93f7df
+         _slice_len:        // core::slice::_$LT$impl$u20$$u5b$T$u5d$$GT$::len::hf4276695aa93f7df
      sub        sp, #0x10                                           // CODE XREF=_ZN4core3str21_$LT$impl$u20$str$GT$3len17h7c07257dd994f6ddE+32
      str        r0, [sp, #0x10 + -8]
      str        r1, [sp, #0x10 + -4]
@@ -112,13 +108,13 @@ pub fn test_rust_hello_world() {
      bx         lr
 
 
-         sub_10098:
+         test_string: 
+     //these instructions encode the string 'foobar 123!' 
      ldr        r6, [r4, #0x74]                                     // DATA XREF=main+22
      str        r7, [r5, #0x24]
      strb       r1, [r4, #0x9]
      adds       r1, #0x20
      adds       r3, #0x32
-
      .byte  0x21 // '!'
 
 
