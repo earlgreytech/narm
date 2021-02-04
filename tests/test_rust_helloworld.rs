@@ -2,7 +2,6 @@ extern crate narm;
 mod common;
 
 use common::*;
-use narm::narmvm::*;
 
 #[test]
 pub fn test_rust_hello_world() {
@@ -15,7 +14,7 @@ pub fn test_rust_hello_world() {
         //note if a nop is removed here, it'll turn into an infinite loop   
         //and conversely, if a nop is added here it'll also turn into an infinite loop
         //There is some alignment specific weirdness happening here
-        nop    //replaces svc exit call   
+        //nop    //replaces svc exit call   
         //nop
         //nop
 
@@ -41,6 +40,7 @@ pub fn test_rust_hello_world() {
         str        r0, [sp, #0x8]
         movs       r1, #0xb             //argument #2 for method _str_as_ptr
         str        r1, [sp, #0xc]
+        bkpt
         bl         _str_as_ptr   
         str        r0, [sp, #0x4]
         ldr        r0, =test_string     // argument #1 for method _str_len
