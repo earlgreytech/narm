@@ -684,7 +684,7 @@ impl NarmVM{
                     return Ok(imm);
                 }
                 if self.condition_passes(cond){
-                    let label = sign_extend32(imm, 8);
+                    let label = sign_extend32((imm as u32) << 1, 9);
                     self.set_thumb_pc_address((self.virtual_pc as i32 + label) as u32);
                 }
                 return Ok(0);

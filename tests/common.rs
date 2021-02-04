@@ -6,6 +6,12 @@ use narm::narmvm::*;
 
 const DEFAULT_GAS: u64 = 10000;
 
+// These constant make addresses to asm code in testing less magic-number-y
+pub const ASM_ENTRY: u32 = 0x01_0000;
+pub const THUMBS_MODE: u32 = 0x01;
+pub const OP_SIZE: u32 = 0x02;
+pub const OP_SIZE_32BIT: u32 = 0x04;
+
 #[cfg(test)]
 pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     let file = asm(assembly_code);
@@ -17,7 +23,7 @@ pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     let mut vm = NarmVM::default();
     vm.memory.add_memory(0x01_0000, 0x01_0000).unwrap();
     vm.copy_into_memory(0x01_0000, &text_scn.data).unwrap();
-    vm.set_thumb_pc_address(0x01_0000);
+    vm.set_thumb_pc_address(ASM_ENTRY);
     vm.gas_remaining = DEFAULT_GAS;
     vm
 }
@@ -122,6 +128,8 @@ pub struct VMState {
     pub c: Option<bool>,
     pub v: Option<bool>,
     pub pc_address: Option<u32>,
+    pub expect_exec_error: bool, // TODO: Allow asserting specific error???
+    pub svc_param: u32,
 }
 
 impl Default for VMState {
@@ -149,6 +157,8 @@ impl Default for VMState {
             c: Some(false),
             v: Some(false),
             pc_address: None, //ignore pc normally
+            expect_exec_error: false,
+            svc_param: 0xFF,
         }
     }
 }
@@ -375,6 +385,16 @@ macro_rules! print_vm_state {
             Some(x) => println!("pc address: {}", format_padded_hex(x)),
             None => println!("pc address: (Ignored)"),
         };
+        // Expect execution error?
+        println!(
+            "expect execution error: {}",
+            $vmstate[$index].expect_exec_error
+        );
+        // Expected svc parameter
+        println!(
+            "svc parameter: {}",
+            format_padded_hex($vmstate[$index].svc_param)
+        );
     };
 }
 
@@ -386,7 +406,7 @@ macro_rules! print_vm_state {
 
 // Format u32 to hex string approperiatly padded with zeroes for easy side-by-side comparison
 // TODO: Underscores?
-// TODO: Replace with build-in functionality used in VM code?
+// TODO: Replace with build-in formatting macro params used in VM diagnostics print code?
 pub fn format_padded_hex(int: u32) -> String {
     let mut string = String::from(format!("{:x}", int));
     while string.len() < 8 {
@@ -395,17 +415,59 @@ pub fn format_padded_hex(int: u32) -> String {
     string.to_uppercase()
 }
 
+// Functions to easily and clearly define memory addresses
+pub fn any_mem_address(base: u32, offset: u32) -> u32 {
+    return base + offset;
+}
+
+pub fn code_mem_address(offset: u32) -> u32 {
+    return ASM_ENTRY + offset + THUMBS_MODE;
+}
+
+pub fn mut_mem_address(offset: u32) -> u32 {
+    return 0x8000_0000 + offset;
+}
+
 // Macro to reduce boilerplate code when executing VM instance and asserting results
+// Note: If you're using stepping without SVC op to execute VM you can't use this macro
 #[macro_export]
 macro_rules! execute_and_assert {
     ( $state:ident, $vm:ident ) => {
-        assert_eq!($vm.execute().unwrap(), 0xFF);
+        if $state.expect_exec_error {
+            assert!(
+                $vm.execute().is_err(),
+                "\n\n>>> Execution: Expected error, got none \n\n"
+            );
+        } else {
+            let svc_param = $vm.execute().unwrap();
+            assert_eq!(
+                svc_param,
+                $state.svc_param,
+                "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n",
+                format_padded_hex($state.svc_param),
+                format_padded_hex(svc_param)
+            );
+        }
         $vm.print_diagnostics();
         assert_vm_eq!($state, $vm);
     };
 
     ( $state:ident, $vm:ident, $index:expr ) => {
-        assert_eq!($vm[$index].execute().unwrap(), 0xFF);
+        if $state[$index].expect_exec_error {
+            assert!(
+                $vm[$index].execute().is_err(),
+                "\n\n>>> Execution: Expected error, got none \n\n"
+            );
+        } else {
+            let svc_param = $vm[$index].execute().unwrap();
+            assert_eq!(
+                svc_param,
+                $state[$index].svc_param,
+                "\n\n>>> Execution: Expected svc parameter 0x{}, got 0x{} \n\n",
+                format_padded_hex($state[$index].svc_param),
+                format_padded_hex(svc_param)
+            );
+        }
         $vm[$index].print_diagnostics();
         assert_vm_eq!($state[$index], $vm[$index]);
     };
@@ -414,7 +476,7 @@ macro_rules! execute_and_assert {
 // Macro to reduce boilerplate code when creating a VM with a single op
 #[macro_export]
 macro_rules! create_vm {
-    ( $vms:ident, $states:ident, $index:expr, $op:literal ) => {
+    ( arrays = ($vms:ident, $states:ident), op_id = $index:expr, asm_literal_add_svc = $op:literal ) => {
         println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
         print_vm_state!($states[$index]);
@@ -428,7 +490,7 @@ macro_rules! create_vm {
         ));
         load_into_vm!($states, $vms, $index);
     };
-    ( $vms:ident, $states:ident, $index:expr, multiline = true, $ops:literal ) => {
+    ( arrays = ($vms:ident, $states:ident), op_id = $index:expr, asm_literal = $ops:literal ) => {
         println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
         println!(">>> Using initial state: \n");
         print_vm_state!($states[$index]);
@@ -436,12 +498,20 @@ macro_rules! create_vm {
         $vms[$index] = create_vm_from_asm($ops);
         load_into_vm!($states, $vms, $index);
     };
+    ( arrays = ($vms:ident, $states:ident), op_id = $index:expr, asm_var = $ops_str:ident ) => {
+        println!("\n>>> Creating VM for op variant: {};", OPCODES[$index]);
+        println!(">>> Using initial state: \n");
+        print_vm_state!($states[$index]);
+        println!("\n>>> VM debug output: \n");
+        $vms[$index] = create_vm_from_asm(&$ops_str);
+        load_into_vm!($states, $vms, $index);
+    };
 }
 
 // Macro to reduce boilerplate code when creating a VM with a single op
 #[macro_export]
 macro_rules! run_test {
-    ( $vms:ident, $states:ident, $op_id_vec:ident ) => {
+    ( arrays = ($vms:ident, $states:ident), op_ids = $op_id_vec:ident ) => {
         let op_count = $op_id_vec.len();
         println!("\n>>> Running tests for {} op varieties \n", op_count);
 
@@ -461,26 +531,38 @@ macro_rules! run_test {
 
 // Macro to reduce boilerplate code when altering all VM state structs in a test
 #[macro_export]
-macro_rules! common_state {
-    ( $op_id_vec:ident, $states:ident.r[$index:expr] = Some($value:expr) ) => {
+macro_rules! set_for_all {
+    ( $states:ident[$op_id_vec:ident].r[$index:expr] = Some($value:expr) ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].r[$index] = Some($value);
         }
     };
-    ( $op_id_vec:ident, $states:ident.r[$index:expr] = None ) => {
+    ( $states:ident[$op_id_vec:ident].r[$index:expr] = $value:expr ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].r[$index] = $value;
+        }
+    };
+    ( $states:ident[$op_id_vec:ident].r[$index:expr] = None ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].r[$index] = None;
         }
     };
-    ( $op_id_vec:ident, $states:ident.$target:ident = Some($value:expr) ) => {
+    ( $states:ident[$op_id_vec:ident].$target:ident = Some($value:expr) ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].$target = Some($value);
         }
     };
-    ( $op_id_vec:ident, $states:ident.$target:ident = None ) => {
+    ( $states:ident[$op_id_vec:ident].$target:ident = $value:expr ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].$target = $value;
+        }
+    };
+    ( $states:ident[$op_id_vec:ident].$target:ident = None ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].$target = None;

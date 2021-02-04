@@ -54,36 +54,48 @@ pub fn test_addsub_sp_to_sp() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![1, 3, 4];
+    let ops_to_test = vec![1, 3, 4];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1100_1110));
-    common_state!(applicable_op_ids, vm_states.r[13] = Some(0x0011_CCCC));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x1100_1110));
+    set_for_all!(vm_states[ops_to_test].r[13] = Some(0x0011_CCCC));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(true));
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     // VM initialization
 
     // 0: ADD <Rd>, SP, #<imm8> T1 - Not applicable
 
     // 1: ADD SP, SP, #<imm7> T2
-    create_vm!(vms, vm_states, 1, "ADD SP, SP, #0x01FC");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 1,
+        asm_literal_add_svc = "ADD SP, SP, #0x01FC"
+    );
     vm_states[1].r[13] = Some(0x0011_CEC8);
 
     // 2: ADD <Rdm>, SP, <Rdm> T1 - Not applicable
 
     // 3: ADD SP, <Rm> T2
-    create_vm!(vms, vm_states, 3, "ADD SP, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal_add_svc = "ADD SP, r0"
+    );
     vm_states[3].r[13] = Some(0x1111_DDDC);
 
     // 4: SUB SP, SP, #<imm7> T1
-    create_vm!(vms, vm_states, 4, "SUB SP, SP, #0x01FC");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 4,
+        asm_literal_add_svc = "SUB SP, SP, #0x01FC"
+    );
     vm_states[4].r[13] = Some(0x0011_CAD0);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // SP artihmetic with register as destination + Preserve flags
@@ -96,32 +108,40 @@ pub fn test_addsub_sp_to_reg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0, 2];
+    let ops_to_test = vec![0, 2];
 
     // Common pre-execution state
-    common_state!(applicable_op_ids, vm_states.r[0] = Some(0x1100_1110));
-    common_state!(applicable_op_ids, vm_states.r[13] = Some(0x0011_CCCC));
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0x1100_1110));
+    set_for_all!(vm_states[ops_to_test].r[13] = Some(0x0011_CCCC));
 
-    common_state!(applicable_op_ids, vm_states.n = Some(true));
-    common_state!(applicable_op_ids, vm_states.z = Some(true));
-    common_state!(applicable_op_ids, vm_states.c = Some(true));
-    common_state!(applicable_op_ids, vm_states.v = Some(true));
+    set_for_all!(vm_states[ops_to_test].n = Some(true));
+    set_for_all!(vm_states[ops_to_test].z = Some(true));
+    set_for_all!(vm_states[ops_to_test].c = Some(true));
+    set_for_all!(vm_states[ops_to_test].v = Some(true));
 
     // VM initialization
 
     // 0: ADD <Rd>, SP, #<imm8> T1
-    create_vm!(vms, vm_states, 0, "ADD r0, SP, #0x03FC");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "ADD r0, SP, #0x03FC"
+    );
     vm_states[0].r[0] = Some(0x0011_D0C8);
 
     // 1: ADD SP, SP, #<imm7> T2 - Not applicable
 
     // 2: ADD <Rdm>, SP, <Rdm> T1
-    create_vm!(vms, vm_states, 2, "ADD r0, SP, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 2,
+        asm_literal_add_svc = "ADD r0, SP, r0"
+    );
     vm_states[2].r[0] = Some(0x1111_DDDC);
 
     // 3: ADD SP, <Rm> T2 - Not applicable
 
     // 4: SUB SP, SP, #<imm7> T1 - Not applicable
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

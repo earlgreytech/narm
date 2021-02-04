@@ -43,17 +43,15 @@ pub fn test_mov_pc() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0];
+    let ops_to_test = vec![0];
 
     // VM initialization
 
     // 0: MOV <Rd>, <Rm> T1
     create_vm!(
-        vms,
-        vm_states,
-        0,
-        multiline = true,
-        "
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal = "
         mov  r0, r15
         adds r0,            #0x0A
         mov  r15, r0
@@ -71,5 +69,5 @@ pub fn test_mov_pc() {
     vm_states[0].r[3] = Some(0xFF);
     vm_states[0].r[4] = Some(0xFF);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

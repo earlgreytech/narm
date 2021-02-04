@@ -42,7 +42,7 @@ pub fn test_mul_inside_32() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0];
+    let ops_to_test = vec![0];
 
     vm_states[0].r[0] = Some(0x0000_1234);
     vm_states[0].r[1] = Some(0x0003_0002);
@@ -50,10 +50,14 @@ pub fn test_mul_inside_32() {
     // VM initialization
 
     // 0: MULS <Rdm>, <Rn>, <Rdm> T1
-    create_vm!(vms, vm_states, 0, "muls r0, r1, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "muls r0, r1, r0"
+    );
     vm_states[0].r[0] = Some(0x369C_2468);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Calculate product that overflow 32 bits
@@ -66,7 +70,7 @@ pub fn test_mul_overflow_32() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0];
+    let ops_to_test = vec![0];
 
     vm_states[0].r[0] = Some(0x1111_1234);
     vm_states[0].r[1] = Some(0x0003_0002);
@@ -74,10 +78,14 @@ pub fn test_mul_overflow_32() {
     // VM initialization
 
     // 0: MULS <Rdm>, <Rn>, <Rdm> T1
-    create_vm!(vms, vm_states, 0, "muls r0, r1, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "muls r0, r1, r0"
+    );
     vm_states[0].r[0] = Some(0x58BE_2468);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Negative flag when result is negative
@@ -90,7 +98,7 @@ pub fn test_mul_flag_neg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0];
+    let ops_to_test = vec![0];
 
     vm_states[0].r[0] = Some(0x0000_1234);
     vm_states[0].r[1] = Some(0x0008_0002);
@@ -103,12 +111,16 @@ pub fn test_mul_flag_neg() {
     // VM initialization
 
     // 0: MULS <Rdm>, <Rn>, <Rdm> T1
-    create_vm!(vms, vm_states, 0, "muls r0, r1, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "muls r0, r1, r0"
+    );
     vm_states[0].r[0] = Some(0x91A0_2468);
     vm_states[0].n = Some(true);
     vm_states[0].z = Some(false);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Zero flag when result is zero
@@ -121,7 +133,7 @@ pub fn test_mul_flag_zero() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![0];
+    let ops_to_test = vec![0];
 
     vm_states[0].r[0] = Some(0x0001_0000);
 
@@ -133,10 +145,14 @@ pub fn test_mul_flag_zero() {
     // VM initialization
 
     // 0: MULS <Rdm>, <Rn>, <Rdm> T1
-    create_vm!(vms, vm_states, 0, "muls r0, r0, r0");
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 0,
+        asm_literal_add_svc = "muls r0, r0, r0"
+    );
     vm_states[0].r[0] = Some(0x00);
     vm_states[0].n = Some(false);
     vm_states[0].z = Some(true);
 
-    run_test!(vms, vm_states, applicable_op_ids);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
