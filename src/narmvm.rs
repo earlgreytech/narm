@@ -121,6 +121,11 @@ impl NarmVM{
             if op == 0b1011_1111_0000_0000{
                 return Ok(0);
             }
+            //1011_1110_xxxx_xxxx BKPT imm8
+            if op == 0b1011_1110_0000_0000{
+                self.breakpoint();
+                return Ok(0);
+            }
             //1101_1110_QQQQ_QQQQ UDF error T1, causes error either way
             if op == 0b1101_1110_0000_0000{
                 return Err(NarmError::InvalidOpcode(op));
@@ -699,7 +704,7 @@ impl NarmVM{
                 0b1011_1100_0000_0000 => {
                     let mut address = self.get_sp();
                     let mut count = 0;
-                    for i in 0..7{
+                    for i in 0..=7{
                         if reglist.get_bit(i){
                             self.sreg[i as usize] = self.memory.get_u32(address)?;
                             address += 4;
@@ -721,7 +726,7 @@ impl NarmVM{
                         address -= 4;
                     }
                     let mut count = 0;
-                    for i in 0..7{
+                    for i in 0..=7{
                         if reglist.get_bit(i){
                             self.memory.set_u32(address, self.sreg[i as usize])?;
                             address += 4;
@@ -787,6 +792,13 @@ impl NarmVM{
 
         Err(NarmError::InvalidOpcode(opcode))
     }
+    #[cfg(not(debug_assertions))]
+    fn breakpoint(&self){}
+    #[cfg(debug_assertions)]
+    fn breakpoint(&self){
+        self.print_diagnostics();
+    }
+
     fn condition_passes(&self, condition: u32) -> bool{
         let c = self.cpsr.c;
         let n = self.cpsr.n;

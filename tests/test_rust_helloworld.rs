@@ -64,15 +64,12 @@ pub fn test_rust_hello_world() {
         str        r1, [sp, #0x28 + -12]
         str        r0, [sp, #0x28 + -8]
         str        r1, [sp, #0x28 + -4]
-        ldr        r0, [sp, #0x28 + -8]
-        ldr        r1, [sp, #0x28 + -4]
         str        r0, [sp, #0x28 + -28]
         str        r1, [sp, #0x28 + -32]
         ldr        r0, [sp, #0x28 + -28]   // argument #1 for method _slice_len
         ldr        r1, [sp, #0x28 + -32]   // argument #2 for method _slice_len
         bl         _slice_len 
         str        r0, [sp, #0x28 + -36]
-        ldr        r0, [sp, #0x28 + -36] 
         add        sp, #0x28
         pop        {r7, pc}
 
@@ -104,7 +101,8 @@ pub fn test_rust_hello_world() {
 
     ",
     );
-    assert_eq!(vm.execute().unwrap(), 0xFF);
+    let result = vm.execute();
     vm.print_diagnostics();
+    assert_eq!(result.unwrap(), 0xFF);
 }
 
