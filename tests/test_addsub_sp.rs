@@ -95,7 +95,7 @@ pub fn test_addsub_sp_to_sp() {
     );
     vm_states[4].r[13] = Some(0x0011_CAD0);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // SP artihmetic with register as destination + Preserve flags
@@ -143,5 +143,5 @@ pub fn test_addsub_sp_to_reg() {
 
     // 4: SUB SP, SP, #<imm7> T1 - Not applicable
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

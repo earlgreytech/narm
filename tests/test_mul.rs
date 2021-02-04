@@ -57,7 +57,7 @@ pub fn test_mul_inside_32() {
     );
     vm_states[0].r[0] = Some(0x369C_2468);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Calculate product that overflow 32 bits
@@ -85,7 +85,7 @@ pub fn test_mul_overflow_32() {
     );
     vm_states[0].r[0] = Some(0x58BE_2468);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Negative flag when result is negative
@@ -120,7 +120,7 @@ pub fn test_mul_flag_neg() {
     vm_states[0].n = Some(true);
     vm_states[0].z = Some(false);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Zero flag when result is zero
@@ -154,5 +154,5 @@ pub fn test_mul_flag_zero() {
     vm_states[0].n = Some(false);
     vm_states[0].z = Some(true);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

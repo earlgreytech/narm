@@ -69,5 +69,5 @@ pub fn test_mov_pc() {
     vm_states[0].r[3] = Some(0xFF);
     vm_states[0].r[4] = Some(0xFF);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

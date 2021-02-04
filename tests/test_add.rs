@@ -102,7 +102,7 @@ pub fn test_add_regadd() {
 
     // 5: CMN <Rn>, <Rm> T1 - Not applicable
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Calculate sum of a register and an immediate value
@@ -147,7 +147,7 @@ pub fn test_add_immadd() {
 
     // 5: CMN <Rn>, <Rm> T1 - Not applicable
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Negative flag when result is negative + unset other flags
@@ -223,7 +223,7 @@ pub fn test_add_flag_neg() {
     common_state!(ops_to_test, vm_states.c = Some(false));
     common_state!(ops_to_test, vm_states.v = Some(false));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Zero flag when result is zero + unset other flags
@@ -297,7 +297,7 @@ pub fn test_add_flag_zero() {
     common_state!(ops_to_test, vm_states.c = Some(true));
     common_state!(ops_to_test, vm_states.v = Some(false));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Carry flag when addition cause unsigned overflow + unset other flags
@@ -371,7 +371,7 @@ pub fn test_add_flag_carry() {
     common_state!(ops_to_test, vm_states.c = Some(true));
     common_state!(ops_to_test, vm_states.v = Some(false));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set V flag when addition cause signed overflow + unset other flags
@@ -445,7 +445,7 @@ pub fn test_add_flag_v() {
     common_state!(ops_to_test, vm_states.c = Some(false));
     common_state!(ops_to_test, vm_states.v = Some(true));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // ADD <Rdn>, <Rm>: Calculate sum of two high registers + Preserve flags
@@ -478,5 +478,5 @@ pub fn test_add_high_noflags() {
     );
     vm_states[3].r[8] = Some(0x1111_8888);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

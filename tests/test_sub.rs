@@ -99,7 +99,7 @@ pub fn test_sub_regsub() {
     // Common expected post-execution state
     common_state!(ops_to_test, vm_states.c = Some(true)); // Set *unless* there is unsigned overflow
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Calculate sum of a register and an immediate value
@@ -158,7 +158,7 @@ pub fn test_sub_immsub() {
 
     vm_states[4].c = Some(false); // Ugly, but here we are. Reverse subtract with its 0 - (>0) will always "set" carry
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Negative flag when result is negative + unset other flags
@@ -249,7 +249,7 @@ pub fn test_sub_flag_neg() {
 
     vm_states[4].c = Some(false); // Ugly, but here we are. Reverse subtract with its 0 - (>0) will always "set" carry
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Zero flag when result is zero + unset other flags
@@ -338,7 +338,7 @@ pub fn test_sub_flag_zero() {
 
     vm_states[4].c = Some(false); // Ugly, but here we are. Reverse subtract with its 0 - (>0) will always "set" carry
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Unset Carry flag when subtraction cause unsigned overflow + unset other flags
@@ -427,7 +427,7 @@ pub fn test_sub_flag_carry() {
     common_state!(ops_to_test, vm_states.c = Some(false)); // Set *unless* there is unsigned overflow
     common_state!(ops_to_test, vm_states.v = Some(false));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set V flag when subtraction cause signed overflow + unset other flags
@@ -516,5 +516,5 @@ pub fn test_sub_flag_v() {
     vm_states[5].n = None; // Op discards result anyway
     vm_states[6].n = None; // Op discards result anyway
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

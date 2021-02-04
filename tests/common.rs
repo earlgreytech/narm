@@ -511,7 +511,7 @@ macro_rules! create_vm {
 // Macro to reduce boilerplate code when creating a VM with a single op
 #[macro_export]
 macro_rules! run_test {
-    ( $vms:ident, $states:ident, $op_id_vec:ident ) => {
+    ( arrays = ($vms:ident, $states:ident), op_ids = $op_id_vec:ident ) => {
         let op_count = $op_id_vec.len();
         println!("\n>>> Running tests for {} op varieties \n", op_count);
 

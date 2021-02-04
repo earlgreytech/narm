@@ -99,7 +99,7 @@ pub fn test_branch_forward() {
     // Common expected post-execution state
     common_state!(ops_to_test, vm_states.r[0] = Some(0xCD));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Branch backward
@@ -159,7 +159,7 @@ pub fn test_branch_backward() {
     common_state!(ops_to_test, vm_states.r[0] = Some(0xCD));
     common_state!(ops_to_test, vm_states.pc_address = None);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Branch far forward (Causing memory error)
@@ -210,7 +210,7 @@ pub fn test_branch_far_forward() {
     );
     vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Branch far backward (Causing memory error)
@@ -258,7 +258,7 @@ pub fn test_branch_far_backward() {
     );
     vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Branch and then branch back using address saved in link register
@@ -290,7 +290,7 @@ pub fn test_branch_and_return() {
     vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Location of the last BLX instruction is loaded to link reg
     vm_states[4].r[0] = Some(0xCD);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Test all different conditions

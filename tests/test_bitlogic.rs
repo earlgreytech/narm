@@ -95,7 +95,7 @@ pub fn test_bitlogic_result() {
     );
     vm_states[4].r[0] = Some(0x0101_1010);
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Negative flag when result is negative
@@ -165,7 +165,7 @@ pub fn test_bitlogic_flag_neg() {
     common_state!(ops_to_test, vm_states.n = Some(true));
     common_state!(ops_to_test, vm_states.z = Some(false));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
 // Set Zero flag when result is zero
@@ -233,5 +233,5 @@ pub fn test_bitlogic_flag_zero() {
     common_state!(ops_to_test, vm_states.n = Some(false));
     common_state!(ops_to_test, vm_states.z = Some(true));
 
-    run_test!(vms, vm_states, ops_to_test);
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
