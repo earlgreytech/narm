@@ -112,6 +112,13 @@ impl NarmVM{
         //NOP pattern
         {
             let op = opcode & !MASK_NOP;
+
+            //1011_1110_xxxx_xxxx BKPT imm8
+            if op == 0b1011_1110_0000_0000{
+                self.breakpoint();
+                return Ok(0);
+            }
+
             //1011_1111_1QQQ_QQQQ NOP HINT catch all (can be safely treated as imm8
             //1011_1111_0000_0000 NOP T1
             //1011_1111_0100_0000 SEV nop
@@ -119,11 +126,6 @@ impl NarmVM{
             //1011_1111_0011_0000 WFI T1 nop
             //1011_1111_0001_0000 YIELD T1 nop
             if op == 0b1011_1111_0000_0000{
-                return Ok(0);
-            }
-            //1011_1110_xxxx_xxxx BKPT imm8
-            if op == 0b1011_1110_0000_0000{
-                self.breakpoint();
                 return Ok(0);
             }
             //1101_1110_QQQQ_QQQQ UDF error T1, causes error either way
@@ -796,6 +798,7 @@ impl NarmVM{
     fn breakpoint(&self){}
     #[cfg(debug_assertions)]
     fn breakpoint(&self){
+        println!("breakpoint triggered!");
         self.print_diagnostics();
     }
 
@@ -933,6 +936,9 @@ impl NarmVM{
         msg.push_str(&format!("c: {}\n", self.cpsr.c));
         msg.push_str(&format!("v: {}\n", self.cpsr.v));
         msg.push_str(&format!("gas remaining: {}\n", self.gas_remaining));
+        msg.push_str(&format!("pc opcode -2 : {:#06x}\n", self.memory.get_u16(self.get_pc_address() - 2).unwrap_or_default()));
+        msg.push_str(&format!("pc opcode +0 : {:#06x}\n", self.memory.get_u16(self.get_pc_address()).unwrap_or_default()));
+        msg.push_str(&format!("pc opcode +2 : {:#06x}\n", self.memory.get_u16(self.get_pc_address() + 2).unwrap_or_default()));
         msg
     }
     pub fn print_diagnostics(&self){
