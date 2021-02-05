@@ -4,6 +4,7 @@ mod common;
 use common::*;
 
 #[test]
+#[ignore]
 pub fn test_rust_hello_world() {
     println!("\n>>> Hello World Rust Program Test\n");
     let mut vm = create_vm_from_asm(
