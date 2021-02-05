@@ -439,16 +439,13 @@ pub fn test_branch_alignment() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let applicable_op_ids = vec![3];
+    let ops_to_test = vec![3];
 
-    // VM initialization
     // 3: BL <label> T1 (32-bit)
     create_vm!(
-        vms,
-        vm_states,
-        3,
-        multiline = true,
-        "
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal = "
         bl label1
         svc             #0x01
         label1:
@@ -468,5 +465,6 @@ pub fn test_branch_alignment() {
     );
     
     vm_states[3].r[14] = None; // Link registry is not important in this test
-    run_test!(vms, vm_states, applicable_op_ids);
+    
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
