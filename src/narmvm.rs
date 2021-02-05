@@ -745,7 +745,7 @@ impl NarmVM{
                     if option{
                         //push LR
                         let lr = LongRegister{register: 14};
-                        self.set_reg(&lr, self.memory.get_u32(address)?);
+                        self.memory.set_u32(address, self.get_reg(&lr))?;
                         count += 1;
                     }
                     self.set_sp(self.get_sp() - 4 * count);
