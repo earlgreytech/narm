@@ -105,8 +105,10 @@ impl NarmVM{
                 //25 bits total length
                 let imm32 = sign_extend32(value, 25);
                 let lr = LongRegister{register: 14};
-                self.set_reg(&lr, self.virtual_pc | (self.pc & 1)); //or with bottom bit of current pc to copy interworking mode
-                self.set_thumb_pc_address((self.virtual_pc as i32).wrapping_add(imm32) as u32);
+                
+                // The virtual PC is or-ed with the second bit of the "regular" PC. This fixes an issue with non-4-aligned BLs producting incorrect jump and link addresses. 
+                self.set_reg(&lr, self.virtual_pc | (self.pc & 3)); //or with bottom bit of current pc to copy interworking mode
+                self.set_thumb_pc_address(((self.virtual_pc | (self.pc & 2)) as i32).wrapping_add(imm32) as u32);
                 return Ok(0);
             }else{
                 //later support MSR/MRS?
