@@ -23,7 +23,11 @@ pub struct NarmVM{
     //TBD
     pub gas_remaining: u64,
     //pub charger: GasCharger
-    pub memory: MemorySystem
+    pub memory: MemorySystem,
+    #[cfg(debug_assertions)]
+    executed_opcodes: Vec<(u32, u16)>,
+    #[cfg(debug_assertions)]
+    breakpoint_flipflop: bool
 }
 
 #[derive(Default)]
@@ -76,6 +80,7 @@ impl NarmVM{
         self.virtual_pc = self.pc.align4() + 4;
         self.last_pc = self.pc;
         let opcode = self.memory.get_u16(self.get_pc_address())?;
+        self.log_opcode(opcode);
         self.pc += 2;
 
         if is_32bit_opcode(opcode){
@@ -112,6 +117,13 @@ impl NarmVM{
         //NOP pattern
         {
             let op = opcode & !MASK_NOP;
+
+            //1011_1110_xxxx_xxxx BKPT imm8
+            if op == 0b1011_1110_0000_0000{
+                self.breakpoint();
+                return Ok(0);
+            }
+
             //1011_1111_1QQQ_QQQQ NOP HINT catch all (can be safely treated as imm8
             //1011_1111_0000_0000 NOP T1
             //1011_1111_0100_0000 SEV nop
@@ -699,7 +711,7 @@ impl NarmVM{
                 0b1011_1100_0000_0000 => {
                     let mut address = self.get_sp();
                     let mut count = 0;
-                    for i in 0..7{
+                    for i in 0..=7{
                         if reglist.get_bit(i){
                             self.sreg[i as usize] = self.memory.get_u32(address)?;
                             address += 4;
@@ -721,7 +733,7 @@ impl NarmVM{
                         address -= 4;
                     }
                     let mut count = 0;
-                    for i in 0..7{
+                    for i in 0..=7{
                         if reglist.get_bit(i){
                             self.memory.set_u32(address, self.sreg[i as usize])?;
                             address += 4;
@@ -787,6 +799,28 @@ impl NarmVM{
 
         Err(NarmError::InvalidOpcode(opcode))
     }
+    #[cfg(not(debug_assertions))]
+    fn breakpoint(&self){}
+    #[cfg(not(debug_assertions))]
+    fn log_opcode(&self, _opcode: u16){}
+    #[cfg(debug_assertions)]
+    fn breakpoint(&mut self){
+        println!("breakpoint triggered!");
+        self.print_diagnostics();
+        if self.breakpoint_flipflop{
+            self.breakpoint_flipflop = false;
+            self.executed_opcodes.clear();
+        }else{
+            self.breakpoint_flipflop = true;
+        }
+    }
+    #[cfg(debug_assertions)]
+    fn log_opcode(&mut self, opcode: u16){
+        if self.breakpoint_flipflop{
+            self.executed_opcodes.push((self.get_pc_address(), opcode));
+        }
+    }
+
     fn condition_passes(&self, condition: u32) -> bool{
         let c = self.cpsr.c;
         let n = self.cpsr.n;
@@ -921,6 +955,43 @@ impl NarmVM{
         msg.push_str(&format!("c: {}\n", self.cpsr.c));
         msg.push_str(&format!("v: {}\n", self.cpsr.v));
         msg.push_str(&format!("gas remaining: {}\n", self.gas_remaining));
+        msg.push_str(&format!("pc opcode -2 : {:#06x}\n", self.memory.get_u16(self.get_pc_address() - 2).unwrap_or_default()));
+        msg.push_str(&format!("pc opcode -2 : {}\n", self.format_binary_opcode(self.memory.get_u16(self.get_pc_address() - 2).unwrap_or_default())));
+        msg.push_str(&format!("pc opcode +0 : {:#06x}\n", self.memory.get_u16(self.get_pc_address()).unwrap_or_default()));
+        msg.push_str(&format!("pc opcode +0 : {}\n", self.format_binary_opcode(self.memory.get_u16(self.get_pc_address()).unwrap_or_default())));
+        msg.push_str(&format!("pc opcode +2 : {:#06x}\n", self.memory.get_u16(self.get_pc_address() + 2).unwrap_or_default()));
+        msg.push_str(&format!("pc opcode +2 : {}\n", self.format_binary_opcode(self.memory.get_u16(self.get_pc_address() + 2).unwrap_or_default())));
+        msg.push_str(&format!("{}\n", self.get_execution_flow_text()));
+        msg
+    }
+    #[cfg(debug_assertions)]
+    fn get_execution_flow_text(&self) -> String{
+        let mut msg = String::default();
+        if !self.breakpoint_flipflop{
+            return msg;
+        }
+        msg.push_str("Execution flow since breakpoint: \n");
+        for (pc, op) in &self.executed_opcodes{
+            msg.push_str(&format!("[{:#010x}] -- {} -- {:#06x}\n",
+                pc,
+                self.format_binary_opcode(*op),
+                op));
+        }
+        msg
+    }
+    #[cfg(not(debug_assertions))]
+    fn get_execution_flow_text(&self) -> String{String::default()}
+
+    fn format_binary_opcode(&self, value: u16) -> String{
+        let mut msg = String::default();
+        msg.push_str("0b");
+        msg.push_str(&format!("{:04b}", (value & (15 << 12)) >> 12));
+        msg.push_str("_");
+        msg.push_str(&format!("{:04b}", (value & (15 << 8)) >> 8));
+        msg.push_str("_");
+        msg.push_str(&format!("{:04b}", (value & (15 << 4)) >> 4));
+        msg.push_str("_");
+        msg.push_str(&format!("{:04b}", (value & (15 << 0)) >> 0));
         msg
     }
     pub fn print_diagnostics(&self){
