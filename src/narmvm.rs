@@ -77,7 +77,7 @@ impl NarmVM{
             return Err(NarmError::OutOfGas);
         }
         self.gas_remaining -= 1;
-        self.virtual_pc = self.pc.align4() + 4;
+        self.virtual_pc = self.pc + 4; // Used as base in most (all?) PC-relative ops. Some docs suggests this shuld be aligned by 4, but compiler disagrees. 
         self.last_pc = self.pc;
         let opcode = self.memory.get_u16(self.get_pc_address())?;
         self.log_opcode(opcode);
@@ -106,9 +106,9 @@ impl NarmVM{
                 let imm32 = sign_extend32(value, 25);
                 let lr = LongRegister{register: 14};
                 
-                // The 4-aligning of the virtual PC is breaking jump addresses, so we use last_pc instead
-                self.set_reg(&lr, self.last_pc + 4); //or with bottom bit of current pc to copy interworking mode
-                self.set_thumb_pc_address(((self.last_pc + 4) as i32).wrapping_add(imm32) as u32);
+                self.set_reg(&lr, self.virtual_pc | 1); //or with bottom bit of current pc to copy interworking mode
+                self.set_thumb_pc_address((self.virtual_pc as i32).wrapping_add(imm32) as u32);
+                
                 return Ok(0);
             }else{
                 //later support MSR/MRS?
@@ -972,10 +972,12 @@ impl NarmVM{
         if !self.breakpoint_flipflop{
             return msg;
         }
-        msg.push_str("Execution flow since breakpoint: \n");
+        msg.push_str("\nExecution flow since breakpoint: \n");
+        msg.push_str("\n[pc hex value] -- [pc bytes after entry] -- op binary value -- op hex value\n\n");
         for (pc, op) in &self.executed_opcodes{
-            msg.push_str(&format!("[{:#010x}] -- {} -- {:#06x}\n",
+            msg.push_str(&format!("[{:#08x}] -- [{:#04}] -- {} -- {:#06x}\n",
                 pc,
+                pc - 0x01_0000,
                 self.format_binary_opcode(*op),
                 op));
         }
