@@ -8,9 +8,11 @@ const DEFAULT_GAS: u64 = 10000;
 
 // These constant make addresses to asm code in testing less magic-number-y
 pub const ASM_ENTRY: u32 = 0x01_0000;
+pub const STACK_MEM_START: u32 = 0x8100_0000;
 pub const THUMBS_MODE: u32 = 0x01;
 pub const OP_SIZE: u32 = 0x02;
 pub const OP_SIZE_32BIT: u32 = 0x04;
+pub const WORD_SIZE: u32 = 0x04;
 
 #[cfg(test)]
 pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
@@ -24,7 +26,7 @@ pub fn create_vm_from_asm(assembly_code: &str) -> NarmVM {
     vm.memory.add_memory(0x01_0000, 0x01_0000).unwrap();
     vm.copy_into_memory(0x01_0000, &text_scn.data).unwrap();
     //add stack memory
-    vm.memory.add_memory(0x8100_0000, 0xFFFF).unwrap();
+    vm.memory.add_memory(STACK_MEM_START, 0xFFFF).unwrap();
     vm.set_thumb_pc_address(ASM_ENTRY);
     vm.gas_remaining = DEFAULT_GAS;
     vm
@@ -120,8 +122,6 @@ pub fn asm(input: &str) -> elf::File {
 ***                                                          ***
 ***************************************************************/
 
-// TODO: Handle special registers differently?
-// TODO: Implement memory area assertion? Maybe too advanced?
 #[derive(Copy, Clone)]
 pub struct VMState {
     pub r: [Option<u32>; 15],
@@ -132,28 +132,14 @@ pub struct VMState {
     pub pc_address: Option<u32>,
     pub expect_exec_error: bool, // TODO: Allow asserting specific error???
     pub svc_param: u32,
+    pub check_memory_start: Option<u32>, // If set, check 20 memory words starting here
+    pub memory: [Option<u32>; 20],       // Only checked if check_memory_start is set
 }
 
 impl Default for VMState {
     fn default() -> VMState {
         VMState {
-            r: [
-                Some(0), // r0
-                Some(0), // r1
-                Some(0), // r2
-                Some(0), // r3
-                Some(0), // r4
-                Some(0), // r5
-                Some(0), // r6
-                Some(0), // r7
-                Some(0), // r8
-                Some(0), // r9
-                Some(0), // r10
-                Some(0), // r11
-                Some(0), // r12
-                Some(0), // r13
-                Some(0), // r14
-            ],
+            r: [Some(0); 15],
             n: Some(false),
             z: Some(false),
             c: Some(false),
@@ -161,6 +147,8 @@ impl Default for VMState {
             pc_address: None, //ignore pc normally
             expect_exec_error: false,
             svc_param: 0xFF,
+            check_memory_start: None,
+            memory: [Some(0); 20],
         }
     }
 }
@@ -202,6 +190,17 @@ macro_rules! assert_vm_eq {
             Some(x) => assert_eq!(x, $vms[$index].get_pc_address(), "\n\n>>> pc: Expected {}, actually contained {}\n\n", x, $vms[$index].get_pc_address()),
             None    => (),
         };
+        // Memory, if check_memory_start is set
+        if $states[$index].check_memory_start != None {
+            let base_address = $states[$index].check_memory_start.unwrap();
+            for i in 0..=19 {
+                let memory_word = $vms[$index].memory.get_u32(base_address + i*4).unwrap();
+                match ($states[$index].memory[i as usize]) {
+                    Some(x) => assert_eq!(x, memory_word, "\n\n>>> Memory word {} (address 0x{}): Expected 0x{}, actually contained 0x{}\n\n", i, format_padded_hex(base_address + i*4), format_padded_hex(x), format_padded_hex(memory_word)),
+                    None    => (),
+                };
+            }
+        }
     };
 }
 
@@ -242,6 +241,19 @@ macro_rules! load_into_vm {
             Some(x) => $vms[$index].set_thumb_pc_address(x),
             None => (),
         };
+        // Memory, if check_memory_start is set
+        if $states[$index].check_memory_start != None {
+            let base_address = $states[$index].check_memory_start.unwrap();
+            for i in 0..=19 {
+                match ($states[$index].memory[i as usize]) {
+                    Some(x) => $vms[$index]
+                        .memory
+                        .set_u32(base_address + i * 4, x)
+                        .unwrap(), // Unwrap here so None doesn't have to return a Result
+                    None => 0,
+                };
+            }
+        }
     };
 }
 
@@ -279,7 +291,7 @@ macro_rules! print_vm_state {
         };
         // PC, program counter
         match ($states[$index].pc_address) {
-            Some(x) => println!("pc address: {}", format_padded_hex(x)),
+            Some(x) => println!("pc address: 0x{}", format_padded_hex(x)),
             None => println!("pc address: (Ignored)"),
         };
         // Expect execution error?
@@ -289,9 +301,25 @@ macro_rules! print_vm_state {
         );
         // Expected svc parameter
         println!(
-            "svc parameter: {}",
+            "svc parameter: 0x{}",
             format_padded_hex($states[$index].svc_param)
         );
+        // Memory, if check_memory_start is set
+        if $states[$index].check_memory_start != None {
+            let base_address = $states[$index].check_memory_start.unwrap();
+            println!(
+                "memory starting from address 0x{}:",
+                format_padded_hex(base_address)
+            );
+            for i in 0..=19 {
+                match ($states[$index].memory[i as usize]) {
+                    Some(x) => println!("memory word {}: 0x{}", i, format_padded_hex(x)),
+                    None => println!("memory word {}: (Ignored)", i),
+                };
+            }
+        } else {
+            println!("Memory: (Ignored)");
+        }
     };
 }
 
@@ -323,6 +351,10 @@ pub fn code_mem_address(offset: u32) -> u32 {
 
 pub fn mut_mem_address(offset: u32) -> u32 {
     return 0x8000_0000 + offset;
+}
+
+pub fn stack_mem_address(offset: u32) -> u32 {
+    return STACK_MEM_START + offset;
 }
 
 // Macro to reduce boilerplate code when executing VM instance and asserting results
