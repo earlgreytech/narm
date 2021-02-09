@@ -153,7 +153,7 @@ impl NarmVM{
                         address = if add then (base + imm32) else (base - imm32);
                         R[t] = MemU[address,4];
                     */
-                    let address = self.virtual_pc + ((imm as u32) << 2);
+                    let address = self.virtual_pc.align4() + ((imm as u32) << 2);
                     self.sreg[reg] = self.memory.get_u32(address)?;
                     return Ok(0);
                 },

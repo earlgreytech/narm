@@ -8,8 +8,8 @@ pub fn test_rust_hello_world() {
     println!("\n>>> Hello World Rust Program Test\n");
     let mut vm = create_vm_from_asm(
         "
-        //ldr        r0, =0x81000200 
-        //mov        sp, r0
+        ldr        r0, =0x81000200 
+        mov        sp, r0
         bl         main  
         //note if a nop is removed here, it'll turn into an infinite loop   
         //and conversely, if a nop is added here it'll also turn into an infinite loop
@@ -102,9 +102,6 @@ pub fn test_rust_hello_world() {
 
     ",
     );
-
-    // This is needed because the first two instructions means for setting the SP give incorrect result, probably because of LDR op
-    vm.external_set_reg(13, 0x81000200);
 
     let result = vm.execute();
     vm.print_diagnostics();
