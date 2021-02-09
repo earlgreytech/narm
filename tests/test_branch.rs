@@ -32,7 +32,7 @@ Special test case for B<C> <label> T1:
 
 - Test all different conditions
 
-Special test case for BL <label> T1 (32-bit): 
+Special test case for BL <label> T1 (32-bit):
 
 - Test proper function with different op alignment
 
@@ -172,7 +172,7 @@ pub fn test_branch_alignment() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let ops_to_test = vec![0,1,2,3,4];
+    let ops_to_test = vec![0, 1, 2, 3, 4];
 
     // Common pre-execution state
     set_for_all!(vm_states[ops_to_test].r[1] = Some(code_mem_address(5 * OP_SIZE)));
@@ -206,12 +206,12 @@ pub fn test_branch_alignment() {
     // 3: BL <label> T1 (32-bit)
     let ops3 = format!("{}bl test1 {}", no_op, post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 3, asm_var = ops3);
-    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT + 1*OP_SIZE)); // Address to the op after the last BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT + 1 * OP_SIZE)); // Address to the op after the last BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     let ops4 = format!("{}blx r1 {}", no_op, post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 4, asm_var = ops4);
-    vm_states[4].r[14] = Some(code_mem_address(2*OP_SIZE)); // Address to the op after the last BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(2 * OP_SIZE)); // Address to the op after the last BLX instruction is loaded to link reg
 
     // Common expected post-execution state
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0xCD));
@@ -522,8 +522,8 @@ pub fn test_branch_alignment_bl() {
         svc             #0x08
     "
     );
-    
+
     vm_states[3].r[14] = None; // Link registry is not important in this test
-    
+
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }

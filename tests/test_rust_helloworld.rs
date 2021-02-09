@@ -102,10 +102,10 @@ pub fn test_rust_hello_world() {
 
     ",
     );
-    
+
     // This is needed because the first two instructions means for setting the SP give incorrect result, probably because of LDR op
     vm.external_set_reg(13, 0x81000200);
-    
+
     let result = vm.execute();
     vm.print_diagnostics();
     assert_eq!(result.unwrap(), 0xFF);
