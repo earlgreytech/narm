@@ -106,7 +106,7 @@ impl NarmVM{
                 let imm32 = sign_extend32(value, 25);
                 let lr = LongRegister{register: 14};
                 
-                self.set_reg(&lr, self.virtual_pc | 1); //or with bottom bit of current pc to copy interworking mode
+                self.set_reg(&lr, self.virtual_pc | (self.pc & 1)); //or with bottom bit of current pc to copy interworking mode
                 self.set_thumb_pc_address((self.virtual_pc as i32).wrapping_add(imm32) as u32);
                 
                 return Ok(0);
