@@ -10,7 +10,7 @@ Integration test for Load/Store word operators
 
 Note:
 Addresses used here have to be aligned by 4 / word-size
-Immediate values are actually 2 bits "larger", with the 2 lowest bits forced to 0
+Immediate values can actually be 2 bits "larger" than listed, with the 2 lowest bits forced to 0
 
 Included varieties:
 
@@ -30,6 +30,9 @@ Test cases:
 The reference for these tests is currently official documentations and a QEMU-based VM
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
 
+TODO: Should LDR/STR <Rt>,[<Rn>,<Rm>] T1 be able to ignore alignment completely?
+Both this VM and the reference VM allow any byte alignment
+
 */
 
 // String representation of ops for use in debug output
@@ -48,7 +51,7 @@ const NUM_OPCODES: &'static usize = &7;
 
 // Load memory word to register
 #[test]
-pub fn test_ldrstr_load() {
+pub fn test_ldrstr_word_load() {
     println!("\n>>> Ldr/Str (word) ops test case: Load memory word to register \n");
 
     // Arrays holding instances of VMs and matching state structs
@@ -62,7 +65,7 @@ pub fn test_ldrstr_load() {
     set_for_all!(vm_states[ops_to_test].memory[0] = Some(0x0DED_BEEF));
     set_for_all!(vm_states[ops_to_test].r[1] = Some(stack_mem_address(0)));
     set_for_all!(vm_states[ops_to_test].r[13] = Some(stack_mem_address(0))); // SP
-    set_for_all!(vm_states[ops_to_test].r[2] = Some(0xBEEF));
+    set_for_all!(vm_states[ops_to_test].r[2] = Some(0xBEEC));
 
     // VM initialization
 
@@ -97,7 +100,7 @@ pub fn test_ldrstr_load() {
     );
 
     // 3: LDR <Rt>,[<Rn>,<Rm>] T1
-    vm_states[3].check_memory_start = Some(stack_mem_address(0xBEEF));
+    vm_states[3].check_memory_start = Some(stack_mem_address(0xBEEC));
     create_vm!(
         arrays = (vms, vm_states),
         op_id = 3,
@@ -112,7 +115,7 @@ pub fn test_ldrstr_load() {
 
 // Store register to memory word
 #[test]
-pub fn test_ldrstr_store() {
+pub fn test_ldrstr_word_store() {
     println!("\n>>> Ldr/Str (word) ops test case: Store register to memory word \n");
 
     // Arrays holding instances of VMs and matching state structs
@@ -126,7 +129,7 @@ pub fn test_ldrstr_store() {
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0x0DED_BEEF));
     set_for_all!(vm_states[ops_to_test].r[1] = Some(stack_mem_address(0)));
     set_for_all!(vm_states[ops_to_test].r[13] = Some(stack_mem_address(0))); // SP
-    set_for_all!(vm_states[ops_to_test].r[2] = Some(0xBEEF));
+    set_for_all!(vm_states[ops_to_test].r[2] = Some(0xBEEC));
 
     // VM initialization
 
@@ -147,7 +150,7 @@ pub fn test_ldrstr_store() {
     );
 
     // 6: STR <Rt>,[<Rn>,<Rm>] T1
-    vm_states[6].check_memory_start = Some(stack_mem_address(0xBEEF));
+    vm_states[6].check_memory_start = Some(stack_mem_address(0xBEEC));
     create_vm!(
         arrays = (vms, vm_states),
         op_id = 6,
