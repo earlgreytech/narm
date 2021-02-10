@@ -77,7 +77,7 @@ impl NarmVM{
             return Err(NarmError::OutOfGas);
         }
         self.gas_remaining -= 1;
-        self.virtual_pc = self.pc.align4() + 4;
+        self.virtual_pc = self.pc + 4; // Used as base in most (all?) PC-relative ops. Some docs suggests this shuld be aligned by 4, but compiler disagrees. 
         self.last_pc = self.pc;
         let opcode = self.memory.get_u16(self.get_pc_address())?;
         self.log_opcode(opcode);
@@ -105,8 +105,10 @@ impl NarmVM{
                 //25 bits total length
                 let imm32 = sign_extend32(value, 25);
                 let lr = LongRegister{register: 14};
+                
                 self.set_reg(&lr, self.virtual_pc | (self.pc & 1)); //or with bottom bit of current pc to copy interworking mode
                 self.set_thumb_pc_address((self.virtual_pc as i32).wrapping_add(imm32) as u32);
+                
                 return Ok(0);
             }else{
                 //later support MSR/MRS?
@@ -151,7 +153,7 @@ impl NarmVM{
                         address = if add then (base + imm32) else (base - imm32);
                         R[t] = MemU[address,4];
                     */
-                    let address = self.virtual_pc + ((imm as u32) << 2);
+                    let address = self.virtual_pc.align4() + ((imm as u32) << 2);
                     self.sreg[reg] = self.memory.get_u32(address)?;
                     return Ok(0);
                 },
@@ -743,7 +745,7 @@ impl NarmVM{
                     if option{
                         //push LR
                         let lr = LongRegister{register: 14};
-                        self.set_reg(&lr, self.memory.get_u32(address)?);
+                        self.memory.set_u32(address, self.get_reg(&lr))?;
                         count += 1;
                     }
                     self.set_sp(self.get_sp() - 4 * count);
@@ -970,10 +972,12 @@ impl NarmVM{
         if !self.breakpoint_flipflop{
             return msg;
         }
-        msg.push_str("Execution flow since breakpoint: \n");
+        msg.push_str("\nExecution flow since breakpoint: \n");
+        msg.push_str("\n[pc hex value] -- [pc bytes after entry] -- op binary value -- op hex value\n\n");
         for (pc, op) in &self.executed_opcodes{
-            msg.push_str(&format!("[{:#010x}] -- {} -- {:#06x}\n",
+            msg.push_str(&format!("[{:#08x}] -- [{:#04}] -- {} -- {:#06x}\n",
                 pc,
+                pc - 0x01_0000,
                 self.format_binary_opcode(*op),
                 op));
         }

@@ -13,13 +13,14 @@ Included varieties:
 B <label> T2            - Branch unconditionally by label, jump size restricted to signed 11 bits
 B<C> <label> T1         - Branch conditionally by label, jump size restricted to signed 8 bits
 BX <Rm> T1              - Branch by register
-BL <label> T1           - Branch by label, set link register, jump size restricted to even signed 25 bits (?????)
+BL <label> T1 (32-bit)  - Branch by label, set link register, jump size restricted to even signed 25 bits (?????)
 BLX <Rm> T1             - Branch by register, set link register
 
 General test cases:
 
 - Branch forward
 - Branch backward
+- Branch with non-4-aligned op
 - Branch far forward (Causing memory error)
 - Branch far backward (Causing memory error)
 
@@ -27,9 +28,13 @@ Special test case for BLX <Rm> T1:
 
 - Branch and then branch back using address saved in link register
 
-Special test case for B<C>:
+Special test case for B<C> <label> T1:
 
 - Test all different conditions
+
+Special test case for BL <label> T1 (32-bit):
+
+- Test proper function with different op alignment
 
 The reference for these tests is currently official documentations and a QEMU-based VM
 TODO: Test against a hardware Cortex-M0 to make sure it's actually up to spec?
@@ -41,7 +46,7 @@ const OPCODES: &'static [&'static str] = &[
     "B <label> T2",
     "B<C> <label> T1",
     "BX <Rm> T1",
-    "BL <label> T1 32bit",
+    "BL <label> T1 (32-bit)",
     "BLX <Rm> T1",
 ];
 
@@ -83,15 +88,15 @@ pub fn test_branch_forward() {
     let ops2 = format!("bx r1 {}", post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 2, asm_var = ops2);
 
-    // 3: BL <label> T1 32bit
+    // 3: BL <label> T1 (32-bit)
     let ops3 = format!("bl test1 {}", post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 3, asm_var = ops3);
-    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Address to the op after the last BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     let ops4 = format!("blx r1 {}", post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 4, asm_var = ops4);
-    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Address to the op after the last BLX instruction is loaded to link reg
 
     // Common expected post-execution state
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0xCD));
@@ -139,19 +144,77 @@ pub fn test_branch_backward() {
     let ops2 = format!("{}bx r1 {}", pre_ops, post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 2, asm_var = ops2);
 
-    // 3: BL <label> T1 32bit
+    // 3: BL <label> T1 (32-bit)
     let ops3 = format!("{}bl test1 {}", pre_ops, post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 3, asm_var = ops3);
-    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT + OP_SIZE * 2)); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT + OP_SIZE * 2)); // Address to the op after the last BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     let ops4 = format!("{}blx r1 {}", pre_ops, post_ops);
     create_vm!(arrays = (vms, vm_states), op_id = 4, asm_var = ops4);
-    vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Address to the op after the last BLX instruction is loaded to link reg
 
     // Common expected post-execution state
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0xCD));
     set_for_all!(vm_states[ops_to_test].pc_address = None);
+
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
+}
+
+// Branch with non-4-aligned op
+// This test is done because of a previous issue where non-4-aligned ops would jump to the wrong address
+#[test]
+pub fn test_branch_alignment() {
+    println!("\n>>> Branch ops test case: Branch with non-4-aligned op \n");
+
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
+
+    // Tell macros which op varieties are tested in this function
+    let ops_to_test = vec![0, 1, 2, 3, 4];
+
+    // Common pre-execution state
+    set_for_all!(vm_states[ops_to_test].r[1] = Some(code_mem_address(5 * OP_SIZE)));
+
+    // VM initialization
+    // A leading NOP (2-byte no-op) is used to make tested op not-4-aligned
+    let no_op = "
+        nop
+        ";
+    let post_ops = "
+        nop
+        nop
+        svc             #0x01
+        test1:
+        movs r0,        #0xCD
+        svc             #0xFF
+        ";
+
+    // 0: B <label> T2"
+    let ops0 = format!("{}b test1 {}", no_op, post_ops);
+    create_vm!(arrays = (vms, vm_states), op_id = 0, asm_var = ops0);
+
+    // 1: B<C> <label> T1 (BNE -> if flag Z = 0)
+    let ops1 = format!("{}bne test1 {}", no_op, post_ops);
+    create_vm!(arrays = (vms, vm_states), op_id = 1, asm_var = ops1);
+
+    // 2: BX <Rm> T1
+    let ops2 = format!("{}bx r1 {}", no_op, post_ops);
+    create_vm!(arrays = (vms, vm_states), op_id = 2, asm_var = ops2);
+
+    // 3: BL <label> T1 (32-bit)
+    let ops3 = format!("{}bl test1 {}", no_op, post_ops);
+    create_vm!(arrays = (vms, vm_states), op_id = 3, asm_var = ops3);
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT + 1 * OP_SIZE)); // Address to the op after the last BL instruction is loaded to link reg
+
+    // 4: BLX <Rm> T1
+    let ops4 = format!("{}blx r1 {}", no_op, post_ops);
+    create_vm!(arrays = (vms, vm_states), op_id = 4, asm_var = ops4);
+    vm_states[4].r[14] = Some(code_mem_address(2 * OP_SIZE)); // Address to the op after the last BLX instruction is loaded to link reg
+
+    // Common expected post-execution state
+    set_for_all!(vm_states[ops_to_test].r[0] = Some(0xCD));
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -185,13 +248,13 @@ pub fn test_branch_far_forward() {
         asm_literal_add_svc = "bx r1"
     );
 
-    // 3: BL <label> T1 32bit
+    // 3: BL <label> T1 (32-bit)
     create_vm!(
         arrays = (vms, vm_states),
         op_id = 3,
         asm_literal_add_svc = "bl #0xF0001"
     );
-    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Address to the op after the last BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     create_vm!(
@@ -199,7 +262,7 @@ pub fn test_branch_far_forward() {
         op_id = 4,
         asm_literal_add_svc = "blx r1"
     );
-    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Address to the op after the last BLX instruction is loaded to link reg
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -233,13 +296,13 @@ pub fn test_branch_far_backward() {
         asm_literal_add_svc = "bx r1"
     );
 
-    // 3: BL <label> T1 32bit
+    // 3: BL <label> T1 (32-bit)
     create_vm!(
         arrays = (vms, vm_states),
         op_id = 3,
         asm_literal_add_svc = "bl #0x50"
     );
-    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Location of the BL instruction is loaded to link reg
+    vm_states[3].r[14] = Some(code_mem_address(OP_SIZE_32BIT)); // Address to the op after the last BL instruction is loaded to link reg
 
     // 4: BLX <Rm> T1
     create_vm!(
@@ -247,7 +310,7 @@ pub fn test_branch_far_backward() {
         op_id = 4,
         asm_literal_add_svc = "blx r1"
     );
-    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Location of the BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(OP_SIZE)); // Address to op after the last BLX instruction is loaded to link reg
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
@@ -278,7 +341,7 @@ pub fn test_branch_and_return() {
         svc             #0x01
     "
     );
-    vm_states[4].r[14] = Some(code_mem_address(3 * OP_SIZE)); // Location of the last BLX instruction is loaded to link reg
+    vm_states[4].r[14] = Some(code_mem_address(4 * OP_SIZE)); // Address to op after the last BLX instruction is loaded to link reg
     vm_states[4].r[0] = Some(0xCD);
 
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
@@ -422,4 +485,45 @@ pub fn test_branch_conditions() {
     vm.cpsr.n = false;
     vm.cpsr.v = true;
     assert_eq!(vm.execute().unwrap(), 0xFF);
+}
+
+// Test proper function with different op alignment
+// This is tested because BL (apparently?) doesn't follow standard for pc-relative address calculation unless op is aligned by 4 in memory
+#[test]
+pub fn test_branch_alignment_bl() {
+    println!("\n>>> BL <label> T1 (32bit) special test case: Test proper function with different op alignment \n");
+
+    // Arrays holding instances of VMs and matching state structs
+    let mut vms: [NarmVM; *NUM_OPCODES] = Default::default();
+    let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
+
+    // Tell macros which op varieties are tested in this function
+    let ops_to_test = vec![3];
+
+    // 3: BL <label> T1 (32-bit)
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 3,
+        asm_literal = "
+        bl label1
+        svc             #0x01
+        label1:
+        bl label2
+        svc             #0x02
+        svc             #0x03
+        label2:
+        bl label3
+        svc             #0x04
+        svc             #0x05
+        svc             #0x06
+        label3:
+        svc             #0xFF
+        svc             #0x07
+        svc             #0x08
+    "
+    );
+
+    vm_states[3].r[14] = None; // Link registry is not important in this test
+
+    run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
