@@ -17,6 +17,7 @@ TST <Rn>, <Rm> T1           - _     <- <Rn>  & <Rm>
 BICS <Rdn>, <Rm> T1         - <Rdn> <- <Rdn> & !(<Rm>)
 ORRS <Rdn>, <Rm> T1         - <Rdn> <- <Rdn> | <Rm>
 EORS <Rdn>, <Rm> T1         - <Rdn> <- <Rdn> ^ <Rm>
+MVN <Rd>, <Rm> T1           - <Rd>  <- !<Rm>
 
 Included cases:
 
@@ -38,10 +39,11 @@ const OPCODES: &'static [&'static str] = &[
     "BICS <Rdn>, <Rm> T1",
     "ORRS <Rdn>, <Rm> T1",
     "EORS <Rdn>, <Rm> T1",
+    "MVN <Rd>, <Rm> T1",
 ];
 
 // Simple constant for number of opcodes tested in this file
-const NUM_OPCODES: &'static usize = &5;
+const NUM_OPCODES: &'static usize = &6;
 
 // Calculate result for two register values
 #[test]
@@ -53,7 +55,7 @@ pub fn test_bitlogic_result() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let ops_to_test = vec![0, 2, 3, 4];
+    let ops_to_test = vec![0, 2, 3, 4, 5];
 
     // Common pre-execution state
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0x0000_1111));
@@ -95,6 +97,15 @@ pub fn test_bitlogic_result() {
     );
     vm_states[4].r[0] = Some(0x0101_1010);
 
+    // 5: MVN <Rd>, <Rm> T1
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 5,
+        asm_literal_add_svc = "mvns r0, r1"
+    );
+    vm_states[5].r[0] = Some(0xFEFE_FEFE);
+    vm_states[5].n = Some(true);
+
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
@@ -108,7 +119,7 @@ pub fn test_bitlogic_flag_neg() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let ops_to_test = vec![0, 1, 2, 3, 4];
+    let ops_to_test = vec![0, 1, 2, 3, 4, 5];
 
     // Common pre-execution state
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0x8001_0000));
@@ -162,6 +173,14 @@ pub fn test_bitlogic_flag_neg() {
     );
     vm_states[4].r[0] = Some(0x8101_0000);
 
+    // 5: MVN <Rd>, <Rm> T1
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 5,
+        asm_literal_add_svc = "mvns r0, r2"
+    );
+    vm_states[5].r[0] = Some(0xFEFF_FFFF);
+
     set_for_all!(vm_states[ops_to_test].n = Some(true));
     set_for_all!(vm_states[ops_to_test].z = Some(false));
 
@@ -178,12 +197,13 @@ pub fn test_bitlogic_flag_zero() {
     let mut vm_states: [VMState; *NUM_OPCODES] = Default::default();
 
     // Tell macros which op varieties are tested in this function
-    let ops_to_test = vec![0, 1, 2, 3, 4];
+    let ops_to_test = vec![0, 1, 2, 3, 4, 5];
 
     // Common pre-execution state
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0x1010_1010));
     set_for_all!(vm_states[ops_to_test].r[1] = Some(0x0101_0101));
     set_for_all!(vm_states[ops_to_test].r[2] = Some(0x00));
+    set_for_all!(vm_states[ops_to_test].r[3] = Some(0xFFFF_FFFF));
 
     set_for_all!(vm_states[ops_to_test].n = Some(true));
     set_for_all!(vm_states[ops_to_test].z = Some(false));
@@ -229,6 +249,14 @@ pub fn test_bitlogic_flag_zero() {
         asm_literal_add_svc = "eors r0, r0"
     );
     vm_states[4].r[0] = Some(0x00);
+
+    // 5: MVN <Rd>, <Rm> T1
+    create_vm!(
+        arrays = (vms, vm_states),
+        op_id = 5,
+        asm_literal_add_svc = "mvns r0, r3"
+    );
+    vm_states[5].r[0] = Some(0x00);
 
     set_for_all!(vm_states[ops_to_test].n = Some(false));
     set_for_all!(vm_states[ops_to_test].z = Some(true));
