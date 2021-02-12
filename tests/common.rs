@@ -447,16 +447,22 @@ macro_rules! set_for_all {
             $states[i].r[$index] = Some($value);
         }
     };
-    ( $states:ident[$op_id_vec:ident].r[$index:expr] = $value:expr ) => {
-        let iter = $op_id_vec.iter().copied();
-        for i in iter {
-            $states[i].r[$index] = $value;
-        }
-    };
     ( $states:ident[$op_id_vec:ident].r[$index:expr] = None ) => {
         let iter = $op_id_vec.iter().copied();
         for i in iter {
             $states[i].r[$index] = None;
+        }
+    };
+    ( $states:ident[$op_id_vec:ident].memory[$index:expr] = Some($value:expr) ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].memory[$index] = Some($value);
+        }
+    };
+    ( $states:ident[$op_id_vec:ident].memory[$index:expr] = None ) => {
+        let iter = $op_id_vec.iter().copied();
+        for i in iter {
+            $states[i].memory[$index] = None;
         }
     };
     ( $states:ident[$op_id_vec:ident].$target:ident = Some($value:expr) ) => {
