@@ -273,10 +273,15 @@ impl NarmVM{
                 },
                 //0100_0001_00xx_xyyy ASRS reg T1 flags
                 0b0100_0001_0000_0000 => {
-                    let (result, carry) = (self.sreg[reg2] as i32).overflowing_shr(self.sreg[reg1] & 0xFF);
+                    let shift = self.sreg[reg1] & 0xFF;
+                    let (result, _) = (self.sreg[reg2] as i32).overflowing_shr(shift);
+                    if shift != 0 { // Ignore carry flag if shift by 0
+                        let (shift_one_less, _) = (self.sreg[reg2] as i32).overflowing_shr(shift-1);
+                        let carry = (shift_one_less & 0x01) > 0; // Get last bit shifted out
+                        self.cpsr.c = carry;
+                    }
                     self.sreg[reg2] = result as u32;
                     self.set_result_flags(result as u32);
-                    self.cpsr.c = carry;
                     return Ok(0);
                 },
                 //0100_0011_10xx_xyyy BICS T1 flags
@@ -305,18 +310,28 @@ impl NarmVM{
                 },
                 //0100_0000_10xx_xyyy LSL reg T1 flags
                 0b0100_0000_1000_0000 => {
-                    let (result, carry) = valuen.overflowing_shl(valuem & 0xFF);
+                    let shift = valuem & 0xFF;
+                    let (result, _) = valuen.overflowing_shl(shift);
+                    if shift != 0 { // Ignore carry flag if shift by 0
+                        let (shift_one_less, _) = valuen.overflowing_shl(shift - 1);
+                        let carry = (shift_one_less & 0x8000_0000) > 0; // Get last bit shifted out
+                        self.cpsr.c = carry;
+                    }
                     self.sreg[reg2] = result;
                     self.set_result_flags(result);
-                    self.cpsr.c = carry;
                     return Ok(0);
                 },
                 //0100_0000_11xx_xyyy LSR reg T1 flags
                 0b0100_0000_1100_0000 => {
-                    let (result, carry) = valuen.overflowing_shr(valuem & 0xFF);
+                    let shift = valuem & 0xFF;
+                    let (result, _) = valuen.overflowing_shr(shift);
+                    if shift != 0 { // Ignore carry flag if shift by 0
+                        let (shift_one_less, _) = valuen.overflowing_shr(shift - 1);
+                        let carry = (shift_one_less & 0x01) > 0; // Get last bit shifted out
+                        self.cpsr.c = carry;
+                    }
                     self.sreg[reg2] = result;
                     self.set_result_flags(result);
-                    self.cpsr.c = carry;
                     return Ok(0);
                 },
                 //0100_0110_ZZxx_xyyy MOV reg T1 noflags (Z is to only access r0-r7 for ARMv6-M)
@@ -389,7 +404,10 @@ impl NarmVM{
                     let result = valuen.rotate_right(shift);
                     self.sreg[reg2] = result;
                     //TODO needs live testing to confirm carry behavior, under documented and conflicting sources
-                    self.cpsr.c = result & (1 << 31) > 0;
+                    // The QEMU-based VM I'm testing against indeed sets carry to last out-shifted bit, so this *should* be correct /Johannes
+                    if shift != 0 { // Ignore carry flag if shift by 0
+                        self.cpsr.c = result & (1 << 31) > 0;
+                    }
                     self.set_result_flags(result);
                     return Ok(0);
                 },
@@ -611,10 +629,14 @@ impl NarmVM{
                     }else{
                         imm
                     };
-                    let (result, carry) = (self.sreg[reg1] as i32).overflowing_shr(shift);
+                    let (result, _) = (self.sreg[reg1] as i32).overflowing_shr(shift);
+                    if shift != 32 { // Ignore carry flag if shift by 0. Doesn't make sense that imm is ever 0, but it compiles...
+                        let (shift_one_less, _) = (self.sreg[reg1] as i32).overflowing_shr(shift - 1);
+                        let carry = (shift_one_less & 0x01) > 0; // Get last bit shifted out
+                        self.cpsr.c = carry;
+                    }
                     self.sreg[reg2] = result as u32;
                     self.set_result_flags(result as u32);
-                    self.cpsr.c = carry;
                     return Ok(0); 
                 },
                 //0110_1xxx_xxyy_yzzz LDR imm T1
@@ -643,7 +665,9 @@ impl NarmVM{
                     //they only conflict if the imm5 argument here is 0. Thus, if imm5 is 0, then defer execution, as the mov instruction should execute instead
                     //this shouldn't ever happen right now, but if the opcode decoding logic were reorganized it could happen in the future, so guard for it now by doing nothing if imm5 is 0
                     if imm != 0{
-                        let (result, carry) = self.sreg[reg1].overflowing_shl(imm);
+                        let (result, _) = self.sreg[reg1].overflowing_shl(imm);
+                        let (shift_one_less, _) = self.sreg[reg1].overflowing_shl(imm-1);
+                        let carry = (shift_one_less & 0x8000_0000) > 0; // Get last bit shifted out
                         self.sreg[reg2] = result;
                         self.set_result_flags(result);
                         self.cpsr.c = carry;
@@ -657,10 +681,14 @@ impl NarmVM{
                     }else{
                         imm
                     };
-                    let (result, carry) = self.sreg[reg1].overflowing_shr(imm);
+                    let (result, _) = self.sreg[reg1].overflowing_shr(imm);
+                    if imm != 32 { // Ignore carry flag if shift by 0. Doesn't make sense that imm is ever 0, but it compiles...
+                        let (shift_one_less, _) = self.sreg[reg1].overflowing_shr(imm-1);
+                        let carry = (shift_one_less & 0x01) > 0; // Get last bit shifted out
+                        self.cpsr.c = carry;
+                    }
                     self.sreg[reg2] = result;
                     self.set_result_flags(result);
-                    self.cpsr.c = carry; 
                     return Ok(0);
                 },
                 //0110_0xxx_xxyy_yzzz STR imm T1
