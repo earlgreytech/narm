@@ -336,8 +336,6 @@ pub fn test_sub_flag_zero() {
     set_for_all!(vm_states[ops_to_test].c = Some(true)); // Set *unless* there is unsigned overflow
     set_for_all!(vm_states[ops_to_test].v = Some(false));
 
-    vm_states[4].c = Some(false); // Ugly, but here we are. Reverse subtract with its 0 - (>0) will always "set" carry
-
     run_test!(arrays = (vms, vm_states), op_ids = ops_to_test);
 }
 
@@ -504,7 +502,6 @@ pub fn test_sub_flag_v() {
 
     // Common expected post-execution state
     set_for_all!(vm_states[ops_to_test].r[0] = Some(0x7FFF_FFFF));
-    vm_states[4].r[0] = Some(0x8FFF_FFFA);
     vm_states[5].r[0] = None; // Op discards result anyway
     vm_states[6].r[0] = None; // Op discards result anyway
 
