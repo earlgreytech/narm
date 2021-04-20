@@ -882,12 +882,14 @@ impl NarmVM{
         self.cpsr.z = result == 0;
     }
     fn op_add(&mut self, operand1: u32, operand2: u32, carry_in: bool, set_flags: bool) -> u32{
-        let prelim_sum = if carry_in{
-            operand1.wrapping_add(1)
-        }else{
-            operand1
-        };
-        let (result, carry) = prelim_sum.overflowing_add(operand2);
+        let (prelim_sum, precarry) = operand1.overflowing_add(carry_in as u32);
+        let (result, mut carry) = prelim_sum.overflowing_add(operand2);
+        
+        // It's impossible for both carry and precarry to be set here, because: 
+        // 1. Precarry set means that prelim_sum = 0 (Because +1 only ever overflows u32::MAX)
+        // 2. There exists no u32 such that adding it to the u32 0 would overflow it (0 + u32::MAX = u32::MAX, no overflow)
+        carry = carry | precarry;
+
         if set_flags{
             let (_, overflow) = (prelim_sum as i32).overflowing_add(operand2 as i32);
             self.cpsr.v = overflow;
