@@ -350,7 +350,7 @@ impl NarmVM{
                 0b0100_0011_0100_0000 => {
                     let (result, _) = (valuen as u32).overflowing_mul(valuem as u32);
                     self.sreg[reg2] = result;
-                    self.set_result_flags(self.sreg[reg2]);
+                    self.set_result_flags(result);
                     return Ok(0);
                 },
                 //0100_0011_11xx_xyyy MVNS T1 flags
