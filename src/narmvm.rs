@@ -881,6 +881,7 @@ impl NarmVM{
         self.cpsr.n = result.get_bit(31);
         self.cpsr.z = result == 0;
     }
+    
     fn op_add(&mut self, operand1: u32, operand2: u32, carry_in: bool, set_flags: bool) -> u32{
         let (prelim_sum, precarry) = operand1.overflowing_add(carry_in as u32);
         let (result, mut carry) = prelim_sum.overflowing_add(operand2);
@@ -891,7 +892,11 @@ impl NarmVM{
         carry = carry | precarry;
 
         if set_flags{
-            let (_, overflow) = (prelim_sum as i32).overflowing_add(operand2 as i32);
+            let (_, preoverflow) = (operand1 as i32).overflowing_add(carry_in as i32);
+            let (_, mut overflow) = (prelim_sum as i32).overflowing_add(operand2 as i32);
+            
+            // Both these flags can't ever both be set for analogous reasons as for carry
+            overflow = overflow | preoverflow;
             self.cpsr.v = overflow;
             self.cpsr.c = carry;
             self.cpsr.n = result.get_bit(31);
