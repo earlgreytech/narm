@@ -261,7 +261,7 @@ impl NarmVM{
             match op{
                 //0100_0001_01xx_xyyy ADC reg T1 flags
                 0b0100_0001_0100_0000 => {
-                    self.sreg[reg2] = self.op_add(self.sreg[reg1], self.sreg[reg2], self.cpsr.c, true);
+                    self.sreg[reg2] = self.op_add(self.sreg[reg2], self.sreg[reg1], self.cpsr.c, true);
                     return Ok(0);
                 },
                 //0100_0000_00xx_xyyy AND reg T1 flags
