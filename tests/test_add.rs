@@ -351,12 +351,13 @@ pub fn test_add_flag_carry() {
     // 3: ADD <Rdn>, <Rm> T2 - Not applicable
 
     // 4: ADCS <Rdn>, <Rm> T1
+    vm_states[4].c = Some(true); // Also test proper behavior if carry causes overflow
     create_vm!(
         arrays = (vms, vm_states),
         op_id = 4,
         asm_literal_add_svc = "adcs  r0, r2"
     );
-    vm_states[4].r[0] = Some(0x05);
+    vm_states[4].r[0] = Some(0x06); // +1 because of carry
 
     // 5: CMN <Rn>, <Rm> T1
     create_vm!(
@@ -425,12 +426,13 @@ pub fn test_add_flag_v() {
     // 3: ADD <Rdn>, <Rm> T2 - Not applicable
 
     // 4: ADCS <Rdn>, <Rm> T1
+    vm_states[4].r[0] = Some(0x7FFF_FFFF); // Also test proper behavior if carry causes overflow
     create_vm!(
         arrays = (vms, vm_states),
         op_id = 4,
         asm_literal_add_svc = "adcs  r0, r2"
-    ); // +1 (carry)
-    vm_states[4].r[0] = Some(0x8000_0006);
+    );
+    vm_states[4].r[0] = Some(0x8000_0006); // +1 because of carry
 
     // 5: CMN <Rn>, <Rm> T1
     create_vm!(

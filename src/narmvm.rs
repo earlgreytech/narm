@@ -261,7 +261,7 @@ impl NarmVM{
             match op{
                 //0100_0001_01xx_xyyy ADC reg T1 flags
                 0b0100_0001_0100_0000 => {
-                    self.sreg[reg2] = self.op_add(self.sreg[reg1], self.sreg[reg2], self.cpsr.c, true);
+                    self.sreg[reg2] = self.op_add(self.sreg[reg2], self.sreg[reg1], self.cpsr.c, true);
                     return Ok(0);
                 },
                 //0100_0000_00xx_xyyy AND reg T1 flags
@@ -350,7 +350,7 @@ impl NarmVM{
                 0b0100_0011_0100_0000 => {
                     let (result, _) = (valuen as u32).overflowing_mul(valuem as u32);
                     self.sreg[reg2] = result;
-                    self.set_result_flags(self.sreg[reg2]);
+                    self.set_result_flags(result);
                     return Ok(0);
                 },
                 //0100_0011_11xx_xyyy MVNS T1 flags
@@ -881,15 +881,22 @@ impl NarmVM{
         self.cpsr.n = result.get_bit(31);
         self.cpsr.z = result == 0;
     }
+    
     fn op_add(&mut self, operand1: u32, operand2: u32, carry_in: bool, set_flags: bool) -> u32{
-        let prelim_sum = if carry_in{
-            operand1.wrapping_add(1)
-        }else{
-            operand1
-        };
-        let (result, carry) = prelim_sum.overflowing_add(operand2);
+        let (prelim_sum, precarry) = operand1.overflowing_add(carry_in as u32);
+        let (result, mut carry) = prelim_sum.overflowing_add(operand2);
+        
+        // It's impossible for both carry and precarry to be set here, because: 
+        // 1. Precarry set means that prelim_sum = 0 (Because +1 only ever overflows u32::MAX)
+        // 2. There exists no u32 such that adding it to the u32 0 would overflow it (0 + u32::MAX = u32::MAX, no overflow)
+        carry = carry | precarry;
+
         if set_flags{
-            let (_, overflow) = (prelim_sum as i32).overflowing_add(operand2 as i32);
+            let (_, preoverflow) = (operand1 as i32).overflowing_add(carry_in as i32);
+            let (_, mut overflow) = (prelim_sum as i32).overflowing_add(operand2 as i32);
+            
+            // Both these flags can't ever both be set for analogous reasons as for carry
+            overflow = overflow | preoverflow;
             self.cpsr.v = overflow;
             self.cpsr.c = carry;
             self.cpsr.n = result.get_bit(31);
