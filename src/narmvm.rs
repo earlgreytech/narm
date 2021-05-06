@@ -934,8 +934,8 @@ impl NarmVM{
         if reg == 13{
             final_value = value.align4(); //special handling of r13/LR
         } else if reg == 15{
-            //special handling for r15/PC
-            self.pc = value.align4();
+            // Direct PC writes (no interworking) should set lowest bit to current mode (1/thumbs for this VM)
+            self.pc = value | 1;
             return;
         }
         if reg < 8{
